@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhooks - <%= sessionId %> - SBMgrup</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">SBMgrup</a>
+            <nav class="nav">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/sessions" class="nav-link">Sessions</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <a href="/sessions/<%= sessionId %>" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem;">
+                ← Back to <%= sessionId %>
+            </a>
+            <h1 class="card-title" style="margin-top: 0.5rem;">Configure Webhook</h1>
+            <p class="card-subtitle">Forward WhatsApp events to your server</p>
+        </div>
+
+        <div class="card">
+            <form id="webhookForm">
+                <div class="form-group">
+                    <label class="form-label">Webhook URL</label>
+                    <input type="url" class="form-input" id="webhookUrl" required 
+                           placeholder="https://your-server.com/webhook">
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        Must be a valid HTTPS URL
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Secret Key (optional)</label>
+                    <input type="text" class="form-input" id="webhookSecret" 
+                           placeholder="For signature validation">
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        Used for X-Webhook-Signature header
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Events to Forward</label>
+                    <div style="display: grid; gap: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="connection" checked>
+                            <span>Connection Status</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="message" checked>
+                            <span>Messages</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="message_receipt">
+                            <span>Message Receipts</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="group" checked>
+                            <span>Group Events</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="chat">
+                            <span>Chat State Changes</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="presence">
+                            <span>Presence (Online/Offline)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="chatstate">
+                            <span>Chat State (Typing)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="voip_call">
+                            <span>VoIP Calls</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="auth_qr">
+                            <span>QR Code Events</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="events" value="auth_paired">
+                            <span>Pairing Events</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="saveBtn">Save Configuration</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Webhook Format</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Your webhook will receive POST requests with this JSON format:
+            </p>
+            <pre style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem;">
+{
+  "sessionId": "<%= sessionId %>",
+  "event": "message",
+  "timestamp": 1703001234567,
+  "data": {
+    "senderJid": "628xxx@s.whatsapp.net",
+    "chatJid": "628xxx@s.whatsapp.net",
+    "message": {
+      "conversation": "Hello!"
+    }
+  }
+}</pre>
+
+            <h3 class="card-title" style="margin-top: 1.5rem; font-size: 1rem;">Headers</h3>
+            <ul style="padding-left: 1.5rem; color: var(--text-secondary);">
+                <li><code>Content-Type: application/json</code></li>
+                <li><code>X-Webhook-Signature: sha256_hash</code> (if secret is set)</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Signature Validation</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+                If you set a secret key, validate the signature in your webhook handler:
+            </p>
+            <pre style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem;">
+const crypto = require('crypto');
+
+const signature = req.headers['x-webhook-signature'];
+const body = JSON.stringify(req.body);
+const expected = crypto
+  .createHmac('sha256', SECRET)
+  .update(body)
+  .digest('hex');
+
+if (signature !== expected) {
+  throw new Error('Invalid signature');
+}</pre>
+        </div>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script>
+        const sessionId = '<%= sessionId %>';
+
+        document.getElementById('webhookForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('webhookUrl').value.trim();
+            const secret = document.getElementById('webhookSecret').value.trim();
+            const saveBtn = document.getElementById('saveBtn');
+            
+            const checkboxes = document.querySelectorAll('input[name="events"]:checked');
+            const events = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (events.length === 0) {
+                showAlert('Select at least one event', 'error');
+                return;
+            }
+            
+            setLoading(saveBtn, true);
+            
+            try {
+                await apiCall(`/sessions/${sessionId}/webhook`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        url,
+                        events,
+                        secret: secret || undefined
+                    })
+                });
+                
+                showAlert('Webhook configured successfully', 'success');
+            } catch (error) {
+                showAlert(error.message, 'error');
+            } finally {
+                setLoading(saveBtn, false);
+            }
+        });
+    </script>
+</body>
+</html>

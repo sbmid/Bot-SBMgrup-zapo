@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBMgrup - WhatsApp Multi-Session Bot</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">SBMgrup</a>
+            <nav class="nav">
+                <a href="/" class="nav-link active">Dashboard</a>
+                <a href="/sessions" class="nav-link">Sessions</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <h1 class="card-title">WhatsApp Multi-Session Bot</h1>
+            <p class="card-subtitle">Manage multiple WhatsApp accounts with web dashboard</p>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalSessions">-</div>
+                <div class="stat-label">Total Sessions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="connectedSessions">-</div>
+                <div class="stat-label">Connected</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="disconnectedSessions">-</div>
+                <div class="stat-label">Disconnected</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 class="card-title" style="margin-bottom: 0;">Quick Actions</h2>
+            </div>
+            <div class="grid grid-2">
+                <a href="/sessions" class="btn btn-primary">Manage Sessions</a>
+                <button class="btn" onclick="openModal('createSessionModal')">Create Session</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Recent Sessions</h2>
+            <div id="recentSessions">
+                <div class="empty-state">
+                    <p class="empty-state-title">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Create Session Modal -->
+    <div id="createSessionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Session</h3>
+                <button class="modal-close" onclick="closeModal('createSessionModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createSessionForm">
+                    <div class="form-group">
+                        <label class="form-label">Session ID</label>
+                        <input type="text" class="form-input" id="sessionId" required 
+                               placeholder="e.g., session1" pattern="[a-zA-Z0-9_\-]+">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                            Only letters, numbers, dash and underscore
+                        </small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('createSessionModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="createSession()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        async function loadStats() {
+            try {
+                const data = await apiCall('/sessions');
+                const sessions = data.sessions;
+                
+                document.getElementById('totalSessions').textContent = sessions.length;
+                document.getElementById('connectedSessions').textContent = 
+                    sessions.filter(s => s.status === 'connected').length;
+                document.getElementById('disconnectedSessions').textContent = 
+                    sessions.filter(s => s.status === 'disconnected').length;
+                
+                displayRecentSessions(sessions.slice(0, 5));
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        function displayRecentSessions(sessions) {
+            const container = document.getElementById('recentSessions');
+            
+            if (sessions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p class="empty-state-title">No sessions yet</p>
+                        <p>Create your first session to get started</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <ul class="list">
+                    ${sessions.map(session => `
+                        <li class="list-item">
+                            <div>
+                                <div class="list-item-title">${session.id}</div>
+                                <div class="list-item-subtitle">
+                                    Last active: ${formatDate(session.lastActivity)}
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                <span class="status status-${session.status}">${session.status}</span>
+                                <a href="/sessions/${session.id}" class="btn btn-small">View</a>
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+
+        async function createSession() {
+            const sessionId = document.getElementById('sessionId').value.trim();
+            
+            if (!sessionId) {
+                showAlert('Session ID is required', 'error');
+                return;
+            }
+            
+            try {
+                await apiCall('/sessions', {
+                    method: 'POST',
+                    body: JSON.stringify({ sessionId })
+                });
+                
+                showAlert('Session created successfully', 'success');
+                closeModal('createSessionModal');
+                document.getElementById('createSessionForm').reset();
+                
+                setTimeout(() => {
+                    window.location.href = `/sessions/${sessionId}`;
+                }, 1000);
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        // Auto refresh stats every 10 seconds
+        loadStats();
+        setInterval(loadStats, 10000);
+    </script>
+</body>
+</html>

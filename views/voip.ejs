@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoIP - <%= sessionId %> - SBMgrup</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">SBMgrup</a>
+            <nav class="nav">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/sessions" class="nav-link">Sessions</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <a href="/sessions/<%= sessionId %>" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem;">
+                ← Back to <%= sessionId %>
+            </a>
+            <h1 class="card-title" style="margin-top: 0.5rem;">VoIP Calls</h1>
+            <p class="card-subtitle">Make and receive WhatsApp voice calls</p>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>Note:</strong> FFmpeg must be installed on the server for VoIP to work. Audio features require the @zapo-js/voip plugin.
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Make a Call</h2>
+            <form id="callForm">
+                <div class="form-group">
+                    <label class="form-label">Recipient (JID)</label>
+                    <input type="text" class="form-input" id="callRecipient" required 
+                           placeholder="628123456789@s.whatsapp.net">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Quick Phone Number</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" class="form-input" id="phoneNumber" placeholder="628123456789">
+                        <button type="button" class="btn" onclick="usePhoneNumber()">Use</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-block" id="callBtn">Make Call</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Active Calls</h2>
+            <div id="activeCalls">
+                <div class="empty-state">
+                    <p class="empty-state-title">No active calls</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Call Features</h2>
+            <ul style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 1.8;">
+                <li>Make outgoing voice calls</li>
+                <li>Accept incoming calls</li>
+                <li>Reject incoming calls</li>
+                <li>End active calls</li>
+                <li>Play preloaded audio (requires audio file path)</li>
+                <li>Stream live audio (TTS, capture)</li>
+                <li>Receive inbound audio</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Requirements</h2>
+            <ul style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 1.8;">
+                <li>FFmpeg installed and in PATH</li>
+                <li>@zapo-js/voip plugin enabled</li>
+                <li>@roamhq/wrtc dependency installed</li>
+                <li>libmlow-wasm dependency installed</li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Call Control Modal -->
+    <div id="callModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="callModalTitle">Call in Progress</h3>
+                <button class="modal-close" onclick="closeModal('callModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="callInfo">
+                    <p><strong>Call ID:</strong> <span id="callId">-</span></p>
+                    <p><strong>Status:</strong> <span id="callStatus">-</span></p>
+                    <p><strong>Duration:</strong> <span id="callDuration">-</span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="endCallBtn" onclick="endCall()">End Call</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        const sessionId = '<%= sessionId %>';
+        let currentCallId = null;
+
+        function usePhoneNumber() {
+            const phone = document.getElementById('phoneNumber').value.trim();
+            if (!phone) {
+                showAlert('Enter phone number', 'error');
+                return;
+            }
+            
+            const jid = `${phone}@s.whatsapp.net`;
+            document.getElementById('callRecipient').value = jid;
+            showAlert('Recipient set', 'success');
+        }
+
+        document.getElementById('callForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const recipient = document.getElementById('callRecipient').value.trim();
+            const callBtn = document.getElementById('callBtn');
+            
+            if (!recipient) {
+                showAlert('Recipient is required', 'error');
+                return;
+            }
+            
+            setLoading(callBtn, true);
+            
+            try {
+                const data = await apiCall(`/sessions/${sessionId}/voip/call`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        to: recipient
+                    })
+                });
+                
+                currentCallId = data.callId;
+                showAlert('Call initiated', 'success');
+                
+                // Show call control modal
+                document.getElementById('callId').textContent = data.callId;
+                document.getElementById('callStatus').textContent = 'Calling...';
+                document.getElementById('callDuration').textContent = '0s';
+                openModal('callModal');
+                
+            } catch (error) {
+                showAlert(error.message, 'error');
+            } finally {
+                setLoading(callBtn, false);
+            }
+        });
+
+        async function endCall() {
+            if (!currentCallId) return;
+            
+            const endBtn = document.getElementById('endCallBtn');
+            setLoading(endBtn, true);
+            
+            try {
+                await apiCall(`/sessions/${sessionId}/voip/${currentCallId}/end`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        reason: 'UserEnded'
+                    })
+                });
+                
+                showAlert('Call ended', 'success');
+                closeModal('callModal');
+                currentCallId = null;
+            } catch (error) {
+                showAlert(error.message, 'error');
+            } finally {
+                setLoading(endBtn, false);
+            }
+        }
+    </script>
+</body>
+</html>

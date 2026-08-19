@@ -1,0 +1,6 @@
+{
+  "watch": ["src", "views", "public"],
+  "ext": "js,json,ejs,css",
+  "ignore": ["node_modules", "sessions", "*.log"],
+  "delay": "1000"
+}

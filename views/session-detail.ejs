@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= sessionId %> - SBMgrup</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">SBMgrup</a>
+            <nav class="nav">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/sessions" class="nav-link">Sessions</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="card-title" style="margin-bottom: 0.25rem;"><%= sessionId %></h1>
+                    <p class="card-subtitle" style="margin-bottom: 0;">Session Details</p>
+                </div>
+                <span class="status" id="sessionStatus">Loading...</span>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <h2 class="card-title">Connection</h2>
+                <div id="connectionInfo">
+                    <p style="color: var(--text-secondary);">Loading...</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                    <button class="btn btn-success" id="connectBtn" onclick="connectSession()">Connect</button>
+                    <button class="btn" id="disconnectBtn" onclick="disconnectSession()">Disconnect</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Quick Actions</h2>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <a href="/sessions/<%= sessionId %>/send" class="btn">Send Message</a>
+                    <a href="/sessions/<%= sessionId %>/groups" class="btn">Manage Groups</a>
+                    <a href="/sessions/<%= sessionId %>/webhooks" class="btn">Configure Webhook</a>
+                    <a href="/sessions/<%= sessionId %>/voip" class="btn">VoIP Calls</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="qrSection" style="display: none;">
+            <h2 class="card-title text-center">Scan QR Code</h2>
+            <p class="text-center" style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Scan with WhatsApp: Settings → Linked Devices → Link a Device
+            </p>
+            <div class="qr-container">
+                <img id="qrImage" src="" alt="QR Code">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Session Info</h2>
+            <div id="sessionInfo">
+                <p style="color: var(--text-secondary);">Loading...</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script>
+        const sessionId = '<%= sessionId %>';
+        let qrCheckInterval = null;
+
+        async function loadSession() {
+            try {
+                const data = await apiCall(`/sessions/${sessionId}`);
+                const session = data.session;
+                
+                // Update status badge
+                const statusBadge = document.getElementById('sessionStatus');
+                statusBadge.className = `status status-${session.status}`;
+                statusBadge.textContent = session.status;
+                
+                // Update connection info
+                document.getElementById('connectionInfo').innerHTML = `
+                    <p><strong>Status:</strong> ${session.status}</p>
+                    <p><strong>Last Activity:</strong> ${formatDate(session.lastActivity)}</p>
+                    <p><strong>Created:</strong> ${formatDate(session.createdAt)}</p>
+                `;
+                
+                // Update session info
+                document.getElementById('sessionInfo').innerHTML = `
+                    <p><strong>Session ID:</strong> ${session.id}</p>
+                    <p><strong>Has QR:</strong> ${session.hasQr ? 'Yes' : 'No'}</p>
+                    <p><strong>Has Webhook:</strong> ${session.hasWebhook ? 'Yes' : 'No'}</p>
+                `;
+                
+                // Show/hide QR section
+                if (session.hasQr) {
+                    loadQR();
+                } else {
+                    document.getElementById('qrSection').style.display = 'none';
+                }
+                
+                // Update buttons
+                document.getElementById('connectBtn').disabled = session.status === 'connected';
+                document.getElementById('disconnectBtn').disabled = session.status === 'disconnected';
+                
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        async function loadQR() {
+            try {
+                const data = await apiCall(`/sessions/${sessionId}/qr`);
+                document.getElementById('qrImage').src = data.qrImage;
+                document.getElementById('qrSection').style.display = 'block';
+            } catch (error) {
+                document.getElementById('qrSection').style.display = 'none';
+            }
+        }
+
+        async function connectSession() {
+            const btn = document.getElementById('connectBtn');
+            setLoading(btn, true);
+            
+            try {
+                await apiCall(`/sessions/${sessionId}/connect`, {
+                    method: 'POST'
+                });
+                
+                showAlert('Connecting...', 'success');
+                
+                // Start checking for QR
+                qrCheckInterval = setInterval(() => {
+                    loadSession();
+                }, 2000);
+                
+            } catch (error) {
+                showAlert(error.message, 'error');
+            } finally {
+                setLoading(btn, false);
+            }
+        }
+
+        async function disconnectSession() {
+            const btn = document.getElementById('disconnectBtn');
+            setLoading(btn, true);
+            
+            try {
+                await apiCall(`/sessions/${sessionId}/disconnect`, {
+                    method: 'POST'
+                });
+                
+                showAlert('Disconnected', 'success');
+                
+                if (qrCheckInterval) {
+                    clearInterval(qrCheckInterval);
+                }
+                
+                loadSession();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            } finally {
+                setLoading(btn, false);
+            }
+        }
+
+        // Initial load
+        loadSession();
+        
+        // Auto refresh
+        setInterval(loadSession, 5000);
+    </script>
+</body>
+</html>
