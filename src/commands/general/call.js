@@ -3,6 +3,9 @@ import fs from 'fs/promises'
 import path from 'path'
 import { getRealJid } from '../../utils/helpers.js'
 
+// Track calls that need audio loaded
+const pendingAudioLoads = new Map()
+
 export default {
     name: 'call',
     category: 'general',
@@ -95,18 +98,44 @@ export default {
             
             await send(`*[+] Audio Ready*\n- File: ${sanitizedTitle}.mp3\n- Calling +${targetNumber}...`)
             
-            // Step 4: Make call with audio
+            // Step 4: Make call WITHOUT audioFile (will load manually)
             const callId = await session.client.voip.startCall({
                 peerJid: targetJid,
-                isVideo: false,
-                audioFile: audioFilePath
+                isVideo: false
             })
             
-            await send(`*[+] Call Started*\n- Call ID: ${callId}\n- To: +${targetNumber}\n- Audio will play when connected`)
+            console.log('Call started with ID:', callId)
+            
+            // Store audio path for this call to load when active
+            pendingAudioLoads.set(callId, audioFilePath)
+            
+            // Setup one-time listener for when call becomes active
+            const stateListener = async (call) => {
+                if (call.callId === callId && call.stateData.state === 'active') {
+                    console.log('Call active, loading audio:', audioFilePath)
+                    
+                    try {
+                        await session.client.voip.loadAudio(callId, audioFilePath)
+                        console.log('Audio loaded successfully')
+                        await send(`*[+] Audio Playing*\n- Call connected\n- Playing: ${sanitizedTitle}.mp3`)
+                    } catch (loadError) {
+                        console.error('Failed to load audio:', loadError.message)
+                        await send(`*[!]* Call connected but audio failed to load: ${loadError.message}`)
+                    }
+                    
+                    // Remove listener
+                    session.client.off('voip_call_state', stateListener)
+                }
+            }
+            
+            session.client.on('voip_call_state', stateListener)
+            
+            await send(`*[+] Call Started*\n- Call ID: ${callId}\n- To: +${targetNumber}\n- Waiting for connection...`)
             
             // Cleanup after 5 minutes
             setTimeout(async () => {
                 try {
+                    pendingAudioLoads.delete(callId)
                     await fs.unlink(audioFilePath)
                     console.log('Cleaned up audio file:', audioFilePath)
                 } catch (e) {

@@ -225,13 +225,27 @@ export class SessionManager extends EventEmitter {
         // VoIP events
         if (client.voip) {
             client.on('voip_call_state', (event) => {
+                console.log(`[${id}] VoIP call state:`, event.stateData.state, 'CallID:', event.callId)
                 this.emit('session_voip_call', { sessionId: id, event })
                 this._forwardWebhook(id, 'voip_call', event)
             })
 
             client.on('voip_call_incoming', (event) => {
+                console.log(`[${id}] VoIP incoming call from:`, event.peerJid)
                 this.emit('session_voip_incoming', { sessionId: id, event })
                 this._forwardWebhook(id, 'voip_incoming', event)
+            })
+            
+            client.on('voip_call_ended', (event) => {
+                console.log(`[${id}] VoIP call ended:`, event.stateData.endReason, 'Duration:', event.stateData.durationSecs, 's')
+            })
+            
+            client.on('voip_call_outbound_audio_finished', (event) => {
+                console.log(`[${id}] VoIP audio finished playing for call:`, event.callId)
+            })
+            
+            client.on('voip_call_error', (error) => {
+                console.error(`[${id}] VoIP error:`, error.message)
             })
         }
     }

@@ -73,6 +73,9 @@ Open: http://localhost:3000
 ### Owner Only
 - `.broadcast <message>` - Broadcast to all groups
 - `.checkjid` - Check JID information
+- `.update` - Auto-update bot from GitHub
+- `.restart` - Restart bot
+- `.version` - Check bot version & updates
 
 ## Requirements
 
