@@ -84,13 +84,30 @@ export default {
             }
             
             // Check if any protected files would be overwritten
-            const protectedFiles = ['.env', 'sessions/', 'data/', 'temp/']
-            const wouldOverwrite = changedFiles.some(f => 
-                protectedFiles.some(p => f.startsWith(p))
-            )
+            // Protect: .env file dan folder sessions/, data/, temp/
+            // Tapi allow file di folder data/ seperti data/.gitkeep
+            const protectedPaths = ['.env', 'sessions/', 'data/responses.db', 'temp/']
+            const wouldOverwrite = changedFiles.some(f => {
+                // Exact match untuk .env
+                if (f === '.env') return true
+                
+                // Check folder sessions/ dan temp/
+                if (f.startsWith('sessions/') || f.startsWith('temp/')) return true
+                
+                // Untuk data/, cuma protect responses.db
+                if (f === 'data/responses.db') return true
+                
+                return false
+            })
             
             if (wouldOverwrite) {
-                return await send('*[!]* Update Blocked*\n\nUpdate would overwrite protected files.\n\nProtected:\n- .env\n- sessions/\n- data/\n- temp/')
+                const protectedFound = changedFiles.filter(f => 
+                    f === '.env' || 
+                    f.startsWith('sessions/') || 
+                    f.startsWith('temp/') || 
+                    f === 'data/responses.db'
+                )
+                return await send(`*[!]* Update Blocked*\n\nProtected files would be overwritten:\n\n${protectedFound.join('\n')}`)
             }
             
             await send(`*[+] Updates Available*\n\nFiles: ${fileCount}\n\nApplying update...`)
