@@ -1,7 +1,7 @@
 import axios from 'axios'
 import fs from 'fs/promises'
 import path from 'path'
-import { getRealJid } from '../../utils/helpers.js'
+import { getRealJid, isOwner } from '../../utils/helpers.js'
 
 // Track calls that need audio loaded
 const pendingAudioLoads = new Map()

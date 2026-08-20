@@ -98,7 +98,16 @@ export default {
             // Step 8: Backup uncommitted changes if any
             if (hasChanges) {
                 await send('*[~]* Backing up local changes...')
-                await execAsync('git stash save "Auto-backup before update"')
+                try {
+                    await execAsync('git stash save "Auto-backup before update"')
+                } catch (stashError) {
+                    // If stash fails due to merge conflict, abort and fix manually
+                    if (stashError.message.includes('needs merge')) {
+                        await send('*[!]* Merge conflict detected\n\nReset with: git reset --hard origin/main')
+                        return
+                    }
+                    throw stashError
+                }
             }
             
             // Step 9: Pull with merge strategy that preserves local files
