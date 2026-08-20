@@ -64,6 +64,16 @@ export class CommandHandler {
             if (!chatJid) return
             
             const isGroup = chatJid.endsWith('@g.us')
+            const senderJid = event.key?.participant || event.key?.remoteJid
+            
+            // DI PRIVATE CHAT: Bot hanya respon owner
+            // DI GROUP: Bot respon untuk semua orang
+            if (!isGroup) {
+                const { isOwner } = await import('../utils/helpers.js')
+                if (!isOwner(senderJid, event)) {
+                    return // Ignore private chat non-owner
+                }
+            }
             
             // Check for auto-response FIRST (only in groups, without prefix)
             const firstChar = text[0]
@@ -96,9 +106,6 @@ export class CommandHandler {
 
             const command = this.commands.get(commandName)
             if (!command) return
-
-            // senderJid already extracted above, reuse chatJid
-            const senderJid = event.key?.participant || event.key?.remoteJid
 
             if (!chatJid) {
                 console.log('No chatJid in event:', event)
