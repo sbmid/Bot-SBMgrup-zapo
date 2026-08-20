@@ -30,3 +30,5 @@ tmp/
 
 # Response data
 data/responses/
+data/*.db
+data/*.db-*

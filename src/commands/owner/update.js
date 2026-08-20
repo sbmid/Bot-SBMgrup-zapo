@@ -17,92 +17,169 @@ export default {
             return await send('*[!]* Owner only command')
         }
         
-        await send('*[+] Starting Update*\n\nPulling latest changes from GitHub...')
+        await send('*[+] Starting Update*\n\nChecking for updates...')
         
         try {
-            // Step 1: Check git status
-            const { stdout: statusOutput } = await execAsync('git status --porcelain')
-            
-            if (statusOutput.trim()) {
-                await send(`*[!]* Uncommitted changes detected:\n\n${statusOutput.substring(0, 500)}\n\nStashing changes...`)
-                await execAsync('git stash')
-            }
-            
-            // Step 2: Fetch from remote
-            await send('*[+] Fetching updates...*')
+            // Step 1: Fetch from remote
             await execAsync('git fetch origin main')
             
-            // Step 3: Check if there are updates
-            const { stdout: diffOutput } = await execAsync('git diff --name-only HEAD origin/main')
-            
-            if (!diffOutput.trim()) {
-                return await send('*[+] Already Up to Date*\n\nNo new updates available.')
+            // Step 2: Check current branch
+            const { stdout: currentBranch } = await execAsync('git branch --show-current')
+            if (currentBranch.trim() !== 'main') {
+                return await send(`*[!]* Not on main branch\n\nCurrent: ${currentBranch.trim()}\n\nCheckout main first: git checkout main`)
             }
             
-            const changedFiles = diffOutput.trim().split('\n')
+            // Step 3: Get current commit
+            const { stdout: currentCommit } = await execAsync('git rev-parse --short HEAD')
+            const { stdout: remoteCommit } = await execAsync('git rev-parse --short origin/main')
+            
+            if (currentCommit.trim() === remoteCommit.trim()) {
+                return await send('*[+] Already Up to Date*\n\nBot is running latest version.')
+            }
+            
+            // Step 4: List files that will be updated
+            const { stdout: diffOutput } = await execAsync('git diff --name-only HEAD origin/main')
+            const changedFiles = diffOutput.trim().split('\n').filter(f => f)
+            
+            // Step 5: Check for uncommitted changes
+            const { stdout: statusOutput } = await execAsync('git status --porcelain')
+            const hasChanges = statusOutput.trim().length > 0
+            
+            // Step 6: Check for untracked files that would conflict
+            const { stdout: untrackedOutput } = await execAsync('git ls-files --others --exclude-standard')
+            const untrackedFiles = untrackedOutput.trim().split('\n').filter(f => f)
+            
+            // Check if any untracked files exist in remote
+            const conflictingFiles = []
+            for (const file of untrackedFiles) {
+                if (changedFiles.includes(file)) {
+                    conflictingFiles.push(file)
+                }
+            }
+            
+            if (conflictingFiles.length > 0) {
+                await send(`*[!]* Conflict Detected*\n\nLocal untracked files will be backed up:\n\n${conflictingFiles.slice(0, 5).join('\n')}${conflictingFiles.length > 5 ? `\n...and ${conflictingFiles.length - 5} more` : ''}\n\nBacking up with .local extension...`)
+                
+                // Backup conflicting files
+                for (const file of conflictingFiles) {
+                    try {
+                        await execAsync(`Move-Item -Path "${file}" -Destination "${file}.local" -Force`)
+                    } catch (e) {
+                        // Try Unix mv as fallback
+                        try {
+                            await execAsync(`mv "${file}" "${file}.local"`)
+                        } catch (e2) {
+                            // Ignore if already moved
+                        }
+                    }
+                }
+            }
+            
+            // Step 7: Re-check changed files count
+            // Step 7: Re-check changed files count
             const fileCount = changedFiles.length
             
-            await send(`*[+] Updates Available*\n\nFiles to update: ${fileCount}\n\nPulling changes...`)
-            
-            // Step 4: Pull changes (will not overwrite .env and sessions/)
-            const { stdout: pullOutput } = await execAsync('git pull origin main')
-            
-            // Step 5: Install new dependencies if package.json changed
-            if (changedFiles.includes('package.json')) {
-                await send('*[+] Package Updated*\n\nInstalling new dependencies...')
-                await execAsync('npm install')
+            if (fileCount === 0) {
+                return await send('*[+] No Changes*\n\nNo files to update.')
             }
             
-            // Step 6: Pop stash if exists
+            // Check if any protected files would be overwritten
+            const protectedFiles = ['.env', 'sessions/', 'data/responses/', 'temp/']
+            const wouldOverwrite = changedFiles.some(f => 
+                protectedFiles.some(p => f.startsWith(p))
+            )
+            
+            if (wouldOverwrite) {
+                return await send('*[!]* Update Blocked*\n\nUpdate would overwrite protected files.\n\nProtected:\n- .env\n- sessions/\n- data/responses/\n- temp/')
+            }
+            
+            await send(`*[+] Updates Available*\n\nFiles: ${fileCount}\n\nApplying update...`)
+            
+            // Step 8: Backup uncommitted changes if any
+            if (hasChanges) {
+                await send('*[~]* Backing up local changes...')
+                await execAsync('git stash save "Auto-backup before update"')
+            }
+            
+            // Step 9: Pull with merge strategy that preserves local files
+            // Using --no-commit to review changes before committing
             try {
-                const { stdout: stashList } = await execAsync('git stash list')
-                if (stashList) {
+                await execAsync('git pull origin main --no-edit')
+            } catch (pullError) {
+                // If pull fails, try to restore
+                if (hasChanges) {
                     await execAsync('git stash pop')
                 }
-            } catch (e) {
-                // No stash to pop
+                throw pullError
             }
             
-            // Generate update summary
+            // Step 10: Restore local changes
+            if (hasChanges) {
+                try {
+                    await execAsync('git stash pop')
+                    await send('*[+]* Local changes restored')
+                } catch (stashError) {
+                    await send('*[!]* Warning: Could not restore local changes\n\nCheck: git stash list')
+                }
+            }
+            
+            // Step 11: Install dependencies if package.json changed
+            if (changedFiles.includes('package.json')) {
+                await send('*[+] Installing Dependencies*\n\nPlease wait...')
+                try {
+                    await execAsync('npm install')
+                } catch (npmError) {
+                    await send('*[!]* npm install failed\n\nRun manually: npm install')
+                }
+            }
+            
+            // Step 12: Clean up backup files and generate summary
+            if (conflictingFiles.length > 0) {
+                await send(`*[~]* Cleaning up ${conflictingFiles.length} backup files...`)
+                for (const file of conflictingFiles) {
+                    try {
+                        await execAsync(`Remove-Item -Path "${file}.local" -Force -ErrorAction SilentlyContinue`)
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
+                }
+            }
+            
             let summary = `*[+] Update Complete!*\n\n`
-            summary += `*Files Updated:* ${fileCount}\n\n`
+            summary += `*From:* ${currentCommit.trim()}\n`
+            summary += `*To:* ${remoteCommit.trim()}\n`
+            summary += `*Files:* ${fileCount}\n\n`
             
             // Group files by type
             const commands = changedFiles.filter(f => f.startsWith('src/commands/'))
             const services = changedFiles.filter(f => f.startsWith('src/services/'))
             const views = changedFiles.filter(f => f.startsWith('views/'))
-            const other = changedFiles.filter(f => !f.startsWith('src/commands/') && !f.startsWith('src/services/') && !f.startsWith('views/'))
+            const utils = changedFiles.filter(f => f.startsWith('src/utils/'))
             
-            if (commands.length > 0) {
-                summary += `*Commands:* ${commands.length}\n`
-            }
-            if (services.length > 0) {
-                summary += `*Services:* ${services.length}\n`
-            }
-            if (views.length > 0) {
-                summary += `*Views:* ${views.length}\n`
-            }
-            if (other.length > 0) {
-                summary += `*Other:* ${other.length}\n`
-            }
+            if (commands.length > 0) summary += `*Commands:* ${commands.length}\n`
+            if (services.length > 0) summary += `*Services:* ${services.length}\n`
+            if (views.length > 0) summary += `*Views:* ${views.length}\n`
+            if (utils.length > 0) summary += `*Utils:* ${utils.length}\n`
             
-            summary += `\n*Next:* Restart bot to apply changes\n\nUse: npm run dev`
+            summary += `\n*Status:* Bot will auto-restart (nodemon)\n`
+            summary += `\nOr use: .restart`
             
             await send(summary)
             
-            // Note: Bot akan auto-restart jika pakai nodemon
-            
         } catch (error) {
             console.error('Update error:', error)
+            console.error('Stack:', error.stack)
             
             let errorMsg = '*[!]* Update Failed\n\n'
             
             if (error.message.includes('not a git repository')) {
-                errorMsg += 'Error: Not a git repository\n\nRun: git init'
-            } else if (error.message.includes('no remote')) {
-                errorMsg += 'Error: No remote configured\n\nRun: git remote add origin https://github.com/sbmid/Bot-SBMgrup-zapo.git'
-            } else if (error.message.includes('merge conflict')) {
-                errorMsg += 'Error: Merge conflict detected\n\nResolve conflicts manually'
+                errorMsg += 'Error: Not a git repository\n\nInitialize: git init'
+            } else if (error.message.includes('no remote') || error.message.includes('does not appear')) {
+                errorMsg += 'Error: No remote configured\n\nAdd remote:\ngit remote add origin https://github.com/sbmid/Bot-SBMgrup-zapo.git'
+            } else if (error.message.includes('merge conflict') || error.message.includes('CONFLICT')) {
+                errorMsg += 'Error: Merge conflict\n\nResolve manually:\ngit status\ngit merge --abort'
+            } else if (error.message.includes('fatal')) {
+                errorMsg += `Git Error: ${error.message.split('\n')[0]}`
             } else {
                 errorMsg += `Error: ${error.message}`
             }

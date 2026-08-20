@@ -70,7 +70,7 @@ export class CommandHandler {
             if (isGroup && /[a-zA-Z0-9]/.test(firstChar)) {
                 // Message starts with letter/number - check auto-response
                 const key = text.trim().toLowerCase()
-                const response = await getResponse(chatJid, key)
+                const response = getResponse(chatJid, key)
                 
                 if (response) {
                     await session.client.message.send(chatJid, response)
@@ -97,8 +97,7 @@ export class CommandHandler {
             const command = this.commands.get(commandName)
             if (!command) return
 
-            // Get proper JIDs from event
-            const chatJid = event.key?.remoteJid
+            // senderJid already extracted above, reuse chatJid
             const senderJid = event.key?.participant || event.key?.remoteJid
 
             if (!chatJid) {

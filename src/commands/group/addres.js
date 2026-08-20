@@ -40,7 +40,7 @@ export default {
         }
         
         try {
-            await addResponse(chatJid, key, text)
+            addResponse(chatJid, key, text)
             
             await send(
                 `*[+] Response Added*\n\n` +

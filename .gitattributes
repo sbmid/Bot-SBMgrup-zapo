@@ -1,0 +1,14 @@
+# Protect configuration files from being overwritten
+.env merge=ours
+.env.* merge=ours
+
+# Protect session data
+sessions/** merge=ours
+
+# Protect response data
+data/responses/** merge=ours
+data/*.db merge=ours
+data/*.db-* merge=ours
+
+# Protect temp files
+temp/** merge=ours

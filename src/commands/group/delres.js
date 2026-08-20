@@ -24,7 +24,7 @@ export default {
         const key = args[0].toLowerCase()
         
         try {
-            const deleted = await deleteResponse(chatJid, key)
+            const deleted = deleteResponse(chatJid, key)
             
             if (!deleted) {
                 return await send(`*[!]* Response tidak ditemukan\n\nKey: ${key}`)

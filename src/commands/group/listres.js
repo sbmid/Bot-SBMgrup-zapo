@@ -18,7 +18,7 @@ export default {
         }
         
         try {
-            const responses = await listResponses(chatJid)
+            const responses = listResponses(chatJid)
             
             if (responses.length === 0) {
                 return await send('*[+]* No Responses\n\nBelum ada auto-response.\n\nTambahkan dengan: addres key@text')

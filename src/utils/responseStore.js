@@ -1,89 +1,103 @@
-import fs from 'fs/promises'
+import Database from 'better-sqlite3'
 import path from 'path'
+import fs from 'fs'
 
-const RESPONSE_DIR = './data/responses'
+const DB_DIR = './data'
+const DB_PATH = path.join(DB_DIR, 'responses.db')
 
-// Ensure data directory exists
-async function ensureDir() {
-    await fs.mkdir(RESPONSE_DIR, { recursive: true })
+// Ensure database directory exists
+if (!fs.existsSync(DB_DIR)) {
+    fs.mkdirSync(DB_DIR, { recursive: true })
 }
 
-// Get response file path for group
-function getResponseFile(groupJid) {
-    const sanitized = groupJid.replace(/[^a-z0-9]/gi, '_')
-    return path.join(RESPONSE_DIR, `${sanitized}.json`)
-}
+// Initialize database
+const db = new Database(DB_PATH)
 
-// Load responses for a group
-export async function loadResponses(groupJid) {
-    await ensureDir()
-    const filePath = getResponseFile(groupJid)
-    
-    try {
-        const data = await fs.readFile(filePath, 'utf-8')
-        return JSON.parse(data)
-    } catch (error) {
-        // File doesn't exist or invalid JSON
-        return {}
-    }
-}
+// Create table if not exists
+db.exec(`
+    CREATE TABLE IF NOT EXISTS responses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_jid TEXT NOT NULL,
+        key TEXT NOT NULL,
+        text TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        count INTEGER DEFAULT 0,
+        UNIQUE(group_jid, key)
+    )
+`)
 
-// Save responses for a group
-export async function saveResponses(groupJid, responses) {
-    await ensureDir()
-    const filePath = getResponseFile(groupJid)
-    await fs.writeFile(filePath, JSON.stringify(responses, null, 2), 'utf-8')
-}
+// Create index for faster lookups
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_group_key ON responses(group_jid, key)
+`)
+
+console.log('Response database initialized:', DB_PATH)
 
 // Add response
-export async function addResponse(groupJid, key, text) {
-    const responses = await loadResponses(groupJid)
-    responses[key.toLowerCase()] = {
-        text,
-        createdAt: new Date().toISOString(),
-        count: 0
-    }
-    await saveResponses(groupJid, responses)
+export function addResponse(groupJid, key, text) {
+    const stmt = db.prepare(`
+        INSERT OR REPLACE INTO responses (group_jid, key, text, created_at, updated_at, count)
+        VALUES (?, ?, ?, 
+            COALESCE((SELECT created_at FROM responses WHERE group_jid = ? AND key = ?), ?),
+            ?,
+            COALESCE((SELECT count FROM responses WHERE group_jid = ? AND key = ?), 0)
+        )
+    `)
+    
+    const now = new Date().toISOString()
+    stmt.run(groupJid, key.toLowerCase(), text, groupJid, key.toLowerCase(), now, now, groupJid, key.toLowerCase())
     return true
 }
 
 // Delete response
-export async function deleteResponse(groupJid, key) {
-    const responses = await loadResponses(groupJid)
-    const lowercaseKey = key.toLowerCase()
-    
-    if (!responses[lowercaseKey]) {
-        return false
-    }
-    
-    delete responses[lowercaseKey]
-    await saveResponses(groupJid, responses)
-    return true
+export function deleteResponse(groupJid, key) {
+    const stmt = db.prepare('DELETE FROM responses WHERE group_jid = ? AND key = ?')
+    const result = stmt.run(groupJid, key.toLowerCase())
+    return result.changes > 0
 }
 
-// Get response
-export async function getResponse(groupJid, key) {
-    const responses = await loadResponses(groupJid)
-    const lowercaseKey = key.toLowerCase()
+// Get response and increment counter
+export function getResponse(groupJid, key) {
+    const stmt = db.prepare('SELECT text FROM responses WHERE group_jid = ? AND key = ?')
+    const row = stmt.get(groupJid, key.toLowerCase())
     
-    if (!responses[lowercaseKey]) {
-        return null
-    }
+    if (!row) return null
     
     // Increment counter
-    responses[lowercaseKey].count++
-    await saveResponses(groupJid, responses)
+    const updateStmt = db.prepare('UPDATE responses SET count = count + 1 WHERE group_jid = ? AND key = ?')
+    updateStmt.run(groupJid, key.toLowerCase())
     
-    return responses[lowercaseKey].text
+    return row.text
 }
 
-// List all responses
-export async function listResponses(groupJid) {
-    const responses = await loadResponses(groupJid)
-    return Object.entries(responses).map(([key, data]) => ({
-        key,
-        text: data.text,
-        count: data.count,
-        createdAt: data.createdAt
+// List all responses for a group
+export function listResponses(groupJid) {
+    const stmt = db.prepare('SELECT key, text, count, created_at FROM responses WHERE group_jid = ? ORDER BY key ASC')
+    return stmt.all(groupJid).map(row => ({
+        key: row.key,
+        text: row.text,
+        count: row.count,
+        createdAt: row.created_at
     }))
 }
+
+// Get statistics
+export function getStats() {
+    const totalStmt = db.prepare('SELECT COUNT(*) as total FROM responses')
+    const groupsStmt = db.prepare('SELECT COUNT(DISTINCT group_jid) as groups FROM responses')
+    const topStmt = db.prepare('SELECT key, text, count FROM responses ORDER BY count DESC LIMIT 10')
+    
+    return {
+        totalResponses: totalStmt.get().total,
+        totalGroups: groupsStmt.get().groups,
+        topUsed: topStmt.all()
+    }
+}
+
+// Close database on exit
+process.on('exit', () => db.close())
+process.on('SIGINT', () => {
+    db.close()
+    process.exit(0)
+})
