@@ -96,17 +96,29 @@ export default {
             await send(`*[+] Updates Available*\n\nFiles: ${fileCount}\n\nApplying update...`)
             
             // Step 8: Backup uncommitted changes if any
+            let stashFailed = false
             if (hasChanges) {
                 await send('*[~]* Backing up local changes...')
                 try {
                     await execAsync('git stash save "Auto-backup before update"')
                 } catch (stashError) {
-                    // If stash fails due to merge conflict, abort and fix manually
-                    if (stashError.message.includes('needs merge')) {
-                        await send('*[!]* Merge conflict detected\n\nReset with: git reset --hard origin/main')
-                        return
+                    // If stash fails due to merge conflict, skip stash and continue
+                    if (stashError.message.includes('needs merge') || stashError.stdout?.includes('needs merge')) {
+                        stashFailed = true
+                        await send('*[!]* Stash failed (merge conflict), forcing reset...')
+                        
+                        // Abort merge and reset
+                        try {
+                            await execAsync('git merge --abort')
+                        } catch (e) {
+                            // Ignore
+                        }
+                        
+                        // Hard reset to remove conflict
+                        await execAsync('git reset --hard HEAD')
+                    } else {
+                        throw stashError
                     }
-                    throw stashError
                 }
             }
             
@@ -122,8 +134,8 @@ export default {
                 throw pullError
             }
             
-            // Step 10: Restore local changes
-            if (hasChanges) {
+            // Step 10: Restore local changes (skip if stash failed)
+            if (hasChanges && !stashFailed) {
                 try {
                     await execAsync('git stash pop')
                     await send('*[+]* Local changes restored')
