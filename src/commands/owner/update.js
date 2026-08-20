@@ -84,30 +84,16 @@ export default {
             }
             
             // Check if any protected files would be overwritten
-            // Protect: .env file dan folder sessions/, data/, temp/
-            // Tapi allow file di folder data/ seperti data/.gitkeep
-            const protectedPaths = ['.env', 'sessions/', 'data/responses.db', 'temp/']
-            const wouldOverwrite = changedFiles.some(f => {
-                // Exact match untuk .env
-                if (f === '.env') return true
-                
-                // Check folder sessions/ dan temp/
-                if (f.startsWith('sessions/') || f.startsWith('temp/')) return true
-                
-                // Untuk data/, cuma protect responses.db
-                if (f === 'data/responses.db') return true
-                
-                return false
-            })
+            const protectedFiles = ['.env', 'sessions/', 'temp/']
+            const wouldOverwrite = changedFiles.some(f => 
+                protectedFiles.some(p => f.startsWith(p))
+            )
             
             if (wouldOverwrite) {
                 const protectedFound = changedFiles.filter(f => 
-                    f === '.env' || 
-                    f.startsWith('sessions/') || 
-                    f.startsWith('temp/') || 
-                    f === 'data/responses.db'
+                    protectedFiles.some(p => f.startsWith(p))
                 )
-                return await send(`*[!]* Update Blocked*\n\nProtected files would be overwritten:\n\n${protectedFound.join('\n')}`)
+                return await send(`*[!]* Update Blocked*\n\nProtected files would be overwritten:\n\n${protectedFound.join('\n')}\n\nUse .fixgit to backup and continue.`)
             }
             
             await send(`*[+] Updates Available*\n\nFiles: ${fileCount}\n\nApplying update...`)
