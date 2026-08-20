@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getResponse } from '../utils/responseStore.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -58,9 +59,27 @@ export class CommandHandler {
 
             if (!text || text.length === 0) return
 
+            // Get chat info
+            const chatJid = event.key?.remoteJid
+            if (!chatJid) return
+            
+            const isGroup = chatJid.endsWith('@g.us')
+            
+            // Check for auto-response FIRST (only in groups, without prefix)
+            const firstChar = text[0]
+            if (isGroup && /[a-zA-Z0-9]/.test(firstChar)) {
+                // Message starts with letter/number - check auto-response
+                const key = text.trim().toLowerCase()
+                const response = await getResponse(chatJid, key)
+                
+                if (response) {
+                    await session.client.message.send(chatJid, response)
+                    return // Stop processing if auto-response triggered
+                }
+            }
+            
             // Check if message starts with non-alphanumeric and non-space character
             // Must start with symbol/emoji (not letter, not number, not space)
-            const firstChar = text[0]
             if (/[a-zA-Z0-9\s]/.test(firstChar)) return // Skip if starts with letter/number/space
 
             // Pattern: symbol/emoji + optional space + command + args
@@ -89,6 +108,13 @@ export class CommandHandler {
 
             console.log(`Command: ${commandName}, From: ${senderJid}, Chat: ${chatJid}`)
 
+            // Check if user is admin (for group commands)
+            let isAdmin = false
+            if (chatJid.endsWith('@g.us')) {
+                const { isGroupAdmin } = await import('../utils/helpers.js')
+                isAdmin = await isGroupAdmin(session, chatJid, senderJid)
+            }
+
             // Build context
             const ctx = {
                 session,
@@ -99,6 +125,7 @@ export class CommandHandler {
                 senderJid,
                 senderNumber: event.key?.participantAlt?.split('@')[0] || senderJid.split('@')[0],
                 isGroup: chatJid?.endsWith('@g.us'),
+                isAdmin,
                 reply: async (text) => {
                     return await session.client.message.send(chatJid, text, {
                         quote: {

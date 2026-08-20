@@ -1,11 +1,17 @@
-import { getRealJid } from '../../utils/helpers.js'
+import { getRealJid, isOwner } from '../../utils/helpers.js'
 
 export default {
     name: 'callme',
-    category: 'general',
+    category: 'owner',
+    ownerOnly: true,
     
     async execute(ctx) {
-        const { send, session, event, reply } = ctx
+        const { send, session, event, reply, senderJid } = ctx
+        
+        // Owner verification
+        if (!isOwner(senderJid, event)) {
+            return await send('*[!]* Owner only command')
+        }
         
         if (!session.client.voip) {
             return await send('*[!]* VoIP not available')

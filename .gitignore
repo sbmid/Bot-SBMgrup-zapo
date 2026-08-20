@@ -27,3 +27,6 @@ Thumbs.db
 # Temporary files
 temp/
 tmp/
+
+# Response data
+data/responses/

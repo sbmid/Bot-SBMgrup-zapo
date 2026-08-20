@@ -61,14 +61,17 @@ Open: http://localhost:3000
 - `.imagine <prompt>` - Generate AI images
 
 ### VoIP (Voice Calls)
-- `.callme` - Bot calls you back
-- `.call <phone> <audio>` - Call with audio search
-- `.callfile <phone> <path>` - Call with local audio
-- `.listcalls` - List active calls
-- `.endcall` - End all calls
+- `.callme` - Bot calls you back (Owner)
+- `.call <phone> <audio>` - Call with audio search (Owner)
+- `.callfile <phone> <path>` - Call with local audio (Owner)
+- `.listcalls` - List active calls (Owner)
+- `.endcall` - End all calls (Owner)
 
 ### Group Management
 - `.groupinfo` - Show group details
+- `.addres <key>@<text>` - Add auto-response (Admin)
+- `.listres` - List all auto-responses (Admin)
+- `.delres <key>` - Delete auto-response (Admin)
 
 ### Owner Only
 - `.broadcast <message>` - Broadcast to all groups
@@ -76,6 +79,11 @@ Open: http://localhost:3000
 - `.update` - Auto-update bot from GitHub
 - `.restart` - Restart bot
 - `.version` - Check bot version & updates
+- `.call <phone> <audio>` - Call with audio search
+- `.callme` - Bot calls you back
+- `.callfile <phone> <path>` - Call with local audio
+- `.listcalls` - List active calls
+- `.endcall` - End all calls
 
 ## Requirements
 

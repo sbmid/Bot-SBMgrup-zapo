@@ -73,3 +73,22 @@ export function isOwner(jid, event = null) {
     
     return false
 }
+
+
+/**
+ * Check if user is group admin
+ * @param {object} session - Session object
+ * @param {string} groupJid - Group JID
+ * @param {string} userJid - User JID to check
+ * @returns {Promise<boolean>} True if admin
+ */
+export async function isGroupAdmin(session, groupJid, userJid) {
+    try {
+        const metadata = await session.client.group.queryGroupMetadata(groupJid)
+        const participant = metadata.participants.find(p => p.jid === userJid)
+        return participant?.isAdmin || participant?.isSuperAdmin || false
+    } catch (error) {
+        console.error('Admin check error:', error)
+        return false
+    }
+}

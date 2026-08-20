@@ -8,10 +8,16 @@ const pendingAudioLoads = new Map()
 
 export default {
     name: 'call',
-    category: 'general',
+    category: 'owner',
+    ownerOnly: true,
     
     async execute(ctx) {
-        const { send, session, args, reply, event } = ctx
+        const { send, session, args, reply, event, senderJid } = ctx
+        
+        // Owner verification
+        if (!isOwner(senderJid, event)) {
+            return await send('*[!]* Owner only command')
+        }
         
         if (!session.client.voip) {
             return await send('*[!]* VoIP not available')
