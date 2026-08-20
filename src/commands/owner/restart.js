@@ -13,12 +13,12 @@ export default {
             return await send('*[!]* Owner only command')
         }
         
-        await send('*[+] Restarting Bot*\n\nBot will restart in 3 seconds...')
+        await send('*[+] Restarting Bot*\n\nBot will be back online in 3-5 seconds...')
         
         setTimeout(() => {
             console.log('Bot restart requested by owner')
-            process.exit(0) // Exit with code 0 (clean exit)
-            // PM2 or nodemon will auto-restart
+            process.exit(0) // Server will auto-restart
         }, 3000)
     }
 }
+
