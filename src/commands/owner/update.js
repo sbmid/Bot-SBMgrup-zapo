@@ -84,13 +84,13 @@ export default {
             }
             
             // Check if any protected files would be overwritten
-            const protectedFiles = ['.env', 'sessions/', 'data/responses/', 'temp/']
+            const protectedFiles = ['.env', 'sessions/', 'data/', 'temp/']
             const wouldOverwrite = changedFiles.some(f => 
                 protectedFiles.some(p => f.startsWith(p))
             )
             
             if (wouldOverwrite) {
-                return await send('*[!]* Update Blocked*\n\nUpdate would overwrite protected files.\n\nProtected:\n- .env\n- sessions/\n- data/responses/\n- temp/')
+                return await send('*[!]* Update Blocked*\n\nUpdate would overwrite protected files.\n\nProtected:\n- .env\n- sessions/\n- data/\n- temp/')
             }
             
             await send(`*[+] Updates Available*\n\nFiles: ${fileCount}\n\nApplying update...`)
