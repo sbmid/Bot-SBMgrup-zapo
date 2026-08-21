@@ -35,11 +35,21 @@ export class CommandHandler {
                 const cmdName = file.replace('.js', '')
 
                 if (command.default) {
-                    this.commands.set(cmdName, {
+                    const cmd = {
                         ...command.default,
                         category
-                    })
+                    }
+                    
+                    // Register main command name
+                    this.commands.set(cmdName, cmd)
                     categoryCommands.push(cmdName)
+                    
+                    // Register aliases
+                    if (cmd.aliases && Array.isArray(cmd.aliases)) {
+                        for (const alias of cmd.aliases) {
+                            this.commands.set(alias.toLowerCase(), cmd)
+                        }
+                    }
                 }
             }
 

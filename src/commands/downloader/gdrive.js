@@ -29,7 +29,14 @@ export default {
             return await send('*[!]* Invalid Google Drive URL')
         }
         
-        await send('*[~]* Downloading from Google Drive...\n\nPlease wait...')
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
             const response = await axios.get(`https://api.alyachan.dev/api/downloader/gdrive?url=${encodeURIComponent(url)}`, {
@@ -44,25 +51,49 @@ export default {
             
             const data = response.data.data
             
-            let caption = '*[+] Google Drive File*\n\n'
-            caption += `*Filename:* ${data.filename}\n`
-            caption += `*Size:* ${data.size}\n`
-            caption += `*Type:* ${data.mime}\n\n`
-            caption += 'Downloaded by SBMgrup Bot'
-            
-            await send(caption)
-            
-            // Send as document
-            await ctx.session.client.message.send(ctx.chatJid, {
-                documentMessage: {
-                    url: data.url,
-                    fileName: data.filename,
-                    mimetype: data.mime
-                }
+            // Download file from URL first
+            const fileResponse = await axios.get(data.url, {
+                responseType: 'arraybuffer'
             })
+            const fileBuffer = Buffer.from(fileResponse.data)
+            
+            // Caption
+            let caption = `*[+] Google Drive Download*\n\n`
+            caption += `*File:* ${data.filename}\n`
+            if (data.size) {
+                caption += `*Size:* ${data.size}\n`
+            }
+            caption += `Downloaded by SBMgrup Bot`
+            
+            // Send as document with caption
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'document',
+                media: fileBuffer,
+                fileName: data.filename,
+                mimetype: data.mime || 'application/octet-stream',
+                caption: caption
+            })
+            
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
         } catch (error) {
             console.error('Google Drive download error:', error)
+            
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
             let errorMsg = '*[!]* Download failed\n\n'
             if (error.response?.status === 503) {

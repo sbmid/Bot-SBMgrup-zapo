@@ -9,50 +9,83 @@ const API_KEY = process.env.ALYACHAN_API_KEY
 export default {
     name: 'bratgif',
     category: 'sticker',
-    aliases: ['bratvid'],
+    aliases: ['bratg'],
     
     async execute(ctx) {
-        const { send, args, session } = ctx
+        const { send, args } = ctx
         
         const text = args.join(' ')
         
         if (!text) {
             return await send(
-                '*[+] Brat GIF Generator*\n\n' +
+                '*[+] Brat GIF Sticker*\n\n' +
                 'Usage: .bratgif <text>\n' +
-                'Alias: .bratgif / .bratvid\n\n' +
-                'Example:\n.bratgif bratbretbrot'
+                'Alias: .bratg\n\n' +
+                'Example:\n.bratgif Hello World'
             )
         }
         
-        await send('*[~]* Generating brat GIF...\n\nPlease wait...')
+        if (text.length > 100) {
+            return await send('*[!]* Text too long (max 100 characters)')
+        }
+        
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
+            // Get GIF URL from API
             const response = await axios.get(`https://api.alyachan.dev/api/canvas/bratgif?text=${encodeURIComponent(text)}`, {
                 headers: {
                     'Authorization': `Bearer ${API_KEY}`
-                },
-                responseType: 'arraybuffer' // Handle binary response
+                }
             })
             
-            // Response is binary array buffer, not JSON
-            const gifBuffer = Buffer.from(response.data)
-            
-            if (!gifBuffer || gifBuffer.length === 0) {
-                return await send('*[!]* Failed to generate brat GIF')
+            if (!response.data.status || !response.data.data?.url) {
+                return await send('*[!]* Failed to generate brat GIF sticker')
             }
             
-            // Send as sticker (animated) - Zapo handles conversion
-            await session.client.message.send(ctx.chatJid, {
-                type: 'sticker',
-                media: gifBuffer,
-                mimetype: 'image/webp'  // Let Zapo convert GIF to animated WebP
+            const gifUrl = response.data.data.url
+            
+            // Download GIF from URL
+            const gifResponse = await axios.get(gifUrl, {
+                responseType: 'arraybuffer'
             })
+            const gifBuffer = Buffer.from(gifResponse.data)
+            
+            // Send as sticker - Zapo media-utils will auto-convert GIF to animated WebP
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'sticker',
+                media: gifBuffer
+            })
+            
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
         } catch (error) {
             console.error('BratGIF generation error:', error)
             
-            let errorMsg = '*[!]* Generation failed\n\n'
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
+            
+            let errorMsg = '*[!]* Sticker generation failed\n\n'
             if (error.response?.status === 503) {
                 errorMsg += 'API service unavailable. Try again later.'
             } else if (error.response?.status === 401) {

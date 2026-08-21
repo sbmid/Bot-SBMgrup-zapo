@@ -29,7 +29,14 @@ export default {
             return await send('*[!]* Invalid TikTok URL')
         }
         
-        await send('*[~]* Downloading from TikTok...\n\nPlease wait...')
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
             const response = await axios.get(`https://api.alyachan.dev/api/downloader/tiktok?url=${encodeURIComponent(url)}`, {
@@ -50,7 +57,7 @@ export default {
             const comments = formatNumber(data.stats.comment)
             const shares = formatNumber(data.stats.share)
             
-            // Caption
+            // Caption with info
             let caption = '*[+] TikTok Downloader*\n\n'
             caption += `*Author:* ${data.author.nickname} (@${data.author.fullname})\n`
             caption += `*Duration:* ${data.duration}s\n\n`
@@ -59,8 +66,6 @@ export default {
             caption += `*Comments:* ${comments}\n`
             caption += `*Shares:* ${shares}\n\n`
             caption += `*Description:*\n${data.title.substring(0, 200)}${data.title.length > 200 ? '...' : ''}`
-            
-            await send(caption)
             
             // Get video URL (priority: HD > No Watermark > Watermark)
             const videoUrl = data.result.find(v => v.type === 'nowatermarkhd')?.url ||
@@ -71,16 +76,40 @@ export default {
                 return await send('*[!]* Video URL not found')
             }
             
-            // Send video
-            await ctx.session.client.message.send(ctx.chatJid, {
-                videoMessage: {
-                    url: videoUrl,
-                    caption: `Downloaded by SBMgrup Bot`
-                }
+            // Download video from URL first
+            const videoResponse = await axios.get(videoUrl, {
+                responseType: 'arraybuffer'
             })
+            const videoBuffer = Buffer.from(videoResponse.data)
+            
+            // Send video with caption
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'video',
+                media: videoBuffer,
+                mimetype: 'video/mp4',
+                caption: caption
+            })
+            
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
         } catch (error) {
             console.error('TikTok download error:', error)
+            
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
             let errorMsg = '*[!]* Download failed\n\n'
             if (error.response?.status === 503) {

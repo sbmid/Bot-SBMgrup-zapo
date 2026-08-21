@@ -29,7 +29,14 @@ export default {
             return await send('*[!]* Invalid MediaFire URL')
         }
         
-        await send('*[~]* Downloading from MediaFire...\n\nPlease wait...')
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
             const response = await axios.get(`https://api.alyachan.dev/api/downloader/mediafire?url=${encodeURIComponent(url)}`, {
@@ -44,24 +51,52 @@ export default {
             
             const data = response.data.data
             
-            let caption = '*[+] MediaFire File*\n\n'
-            caption += `*Filename:* ${data.filename}\n`
-            caption += `*Size:* ${data.size}\n\n`
-            caption += 'Downloaded by SBMgrup Bot'
-            
-            await send(caption)
-            
-            // Send as document
-            await ctx.session.client.message.send(ctx.chatJid, {
-                documentMessage: {
-                    url: data.url,
-                    fileName: data.filename,
-                    mimetype: 'application/octet-stream'
-                }
+            // Download file from URL first
+            const fileResponse = await axios.get(data.url, {
+                responseType: 'arraybuffer'
             })
+            const fileBuffer = Buffer.from(fileResponse.data)
+            
+            // Caption
+            let caption = `*[+] MediaFire Download*\n\n`
+            caption += `*File:* ${data.filename}\n`
+            if (data.size) {
+                caption += `*Size:* ${data.size}\n`
+            }
+            if (data.uploaded) {
+                caption += `*Uploaded:* ${data.uploaded}\n`
+            }
+            caption += `Downloaded by SBMgrup Bot`
+            
+            // Send as document with caption
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'document',
+                media: fileBuffer,
+                fileName: data.filename,
+                mimetype: 'application/octet-stream',
+                caption: caption
+            })
+            
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
         } catch (error) {
             console.error('MediaFire download error:', error)
+            
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
             let errorMsg = '*[!]* Download failed\n\n'
             if (error.response?.status === 503) {

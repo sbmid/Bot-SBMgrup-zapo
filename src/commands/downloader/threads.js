@@ -29,7 +29,14 @@ export default {
             return await send('*[!]* Invalid Threads URL')
         }
         
-        await send('*[~]* Downloading from Threads...\n\nPlease wait...')
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
             const response = await axios.get(`https://api.alyachan.dev/api/downloader/threads?url=${encodeURIComponent(url)}`, {
@@ -43,32 +50,39 @@ export default {
             }
             
             const data = response.data.data
-            const total = data.result.length
+            const total = data.total
             
-            let caption = `*[+] Threads Downloader*\n\n`
-            caption += `*Total Media:* ${total}\n\n`
-            caption += `Downloaded by SBMgrup Bot`
-            
-            await send(caption)
-            
-            // Send all media
+            // Send all media with caption
             for (let i = 0; i < data.result.length; i++) {
                 const media = data.result[i]
                 
                 try {
+                    // Download media from URL first
+                    const mediaResponse = await axios.get(media.url, {
+                        responseType: 'arraybuffer'
+                    })
+                    const mediaBuffer = Buffer.from(mediaResponse.data)
+                    
+                    // Caption for each media
+                    let caption = `*[+] Threads Downloader*\n\n`
+                    if (total > 1) {
+                        caption += `*Media:* ${i + 1}/${total}\n`
+                    }
+                    caption += `Downloaded by SBMgrup Bot`
+                    
                     if (media.type === 'video') {
                         await ctx.session.client.message.send(ctx.chatJid, {
-                            videoMessage: {
-                                url: media.url,
-                                caption: total > 1 ? `Media ${i + 1}/${total}` : undefined
-                            }
+                            type: 'video',
+                            media: mediaBuffer,
+                            mimetype: 'video/mp4',
+                            caption: caption
                         })
                     } else if (media.type === 'image') {
                         await ctx.session.client.message.send(ctx.chatJid, {
-                            imageMessage: {
-                                url: media.url,
-                                caption: total > 1 ? `Media ${i + 1}/${total}` : undefined
-                            }
+                            type: 'image',
+                            media: mediaBuffer,
+                            mimetype: 'image/jpeg',
+                            caption: caption
                         })
                     }
                     
@@ -81,8 +95,26 @@ export default {
                 }
             }
             
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
+            
         } catch (error) {
             console.error('Threads download error:', error)
+            
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
             let errorMsg = '*[!]* Download failed\n\n'
             if (error.response?.status === 503) {

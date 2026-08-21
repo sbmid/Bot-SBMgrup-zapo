@@ -29,7 +29,14 @@ export default {
             return await send('*[!]* Invalid CapCut URL')
         }
         
-        await send('*[~]* Downloading from CapCut...\n\nPlease wait...')
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
             const response = await axios.get(`https://api.alyachan.dev/api/downloader/capcut?url=${encodeURIComponent(url)}`, {
@@ -42,22 +49,57 @@ export default {
                 return await send('*[!]* Failed to fetch CapCut template')
             }
             
-            const videoUrl = response.data.data.url
+            const data = response.data.data
+            const videoUrl = data.video_url
             
             if (!videoUrl) {
                 return await send('*[!]* Video URL not found')
             }
             
-            // Send video
-            await ctx.session.client.message.send(ctx.chatJid, {
-                videoMessage: {
-                    url: videoUrl,
-                    caption: '*[+] CapCut Template*\n\nDownloaded by SBMgrup Bot'
-                }
+            // Download video from URL first
+            const videoResponse = await axios.get(videoUrl, {
+                responseType: 'arraybuffer'
             })
+            const videoBuffer = Buffer.from(videoResponse.data)
+            
+            // Caption
+            let caption = '*[+] CapCut Template*\n\n'
+            if (data.title) {
+                caption += `*Title:* ${data.title}\n`
+            }
+            if (data.usage) {
+                caption += `*Usage:* ${data.usage}\n`
+            }
+            caption += `Downloaded by SBMgrup Bot`
+            
+            // Send video with caption
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'video',
+                media: videoBuffer,
+                mimetype: 'video/mp4',
+                caption: caption
+            })
+            
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
         } catch (error) {
             console.error('CapCut download error:', error)
+            
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
             let errorMsg = '*[!]* Download failed\n\n'
             if (error.response?.status === 503) {

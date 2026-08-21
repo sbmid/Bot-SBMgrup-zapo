@@ -29,7 +29,14 @@ export default {
             return await send('*[!]* Please provide watermark text\n\nExample: .wm packname|author')
         }
         
-        await send('*[~]* Adding watermark...\n\nPlease wait...')
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
             // Parse watermark text (handle pipe separator)
@@ -52,14 +59,12 @@ export default {
                 return await send('*[!]* Failed to download sticker')
             }
             
-            // Upload sticker to get descriptor
+            // Upload sticker to get descriptor (Zapo handles WebP conversion)
             const uploaded = await session.client.message.upload(stickerBuffer, {
-                type: 'sticker',
-                mimetype: 'image/webp'
+                type: 'sticker'
             })
             
             // Send using raw proto to include packname/author metadata
-            // (typed builder doesn't expose these fields)
             await session.client.message.send(ctx.chatJid, {
                 stickerMessage: {
                     url: uploaded.url,
@@ -83,8 +88,27 @@ export default {
                 }
             })
             
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
+            
         } catch (error) {
             console.error('Watermark error:', error)
+            
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
+            
             await send(`*[!]* Failed to add watermark\n\n${error.message}`)
         }
     }

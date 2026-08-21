@@ -26,12 +26,18 @@ export default {
             return await send('*[!]* Please reply to an image or video message')
         }
         
-        await send('*[~]* Creating sticker...\n\nPlease wait...')
+        // React loading
+        try {
+            await ctx.session.client.message.send(ctx.chatJid, {
+                type: 'reaction',
+                emoji: '⏳',
+                target: ctx.event
+            })
+        } catch (e) {}
         
         try {
-            let mediaBuffer
-            
             // Download media (returns Uint8Array)
+            let mediaBuffer
             if (imageMsg) {
                 mediaBuffer = await session.client.message.downloadBytes(imageMsg)
             } else if (videoMsg) {
@@ -42,18 +48,33 @@ export default {
                 return await send('*[!]* Failed to download media')
             }
             
-            // ponytail: No ffmpeg trim - WhatsApp client handles video duration limit
-            // If video >10sec becomes an issue, upgrade path: shell out to ffmpeg -ss 0 -t 10
-            
-            // Send as sticker (Zapo handles WebP conversion and encryption)
+            // Send as sticker - Zapo media-utils will auto-convert to WebP
             await session.client.message.send(ctx.chatJid, {
                 type: 'sticker',
-                media: mediaBuffer,
-                mimetype: 'image/webp'
+                media: mediaBuffer
             })
+            
+            // React success
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '✅',
+                    target: ctx.event
+                })
+            } catch (e) {}
             
         } catch (error) {
             console.error('Sticker creation error:', error)
+            
+            // React error
+            try {
+                await ctx.session.client.message.send(ctx.chatJid, {
+                    type: 'reaction',
+                    emoji: '❌',
+                    target: ctx.event
+                })
+            } catch (e) {}
+            
             await send(`*[!]* Failed to create sticker\n\n${error.message}`)
         }
     }

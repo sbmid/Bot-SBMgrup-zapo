@@ -1,6 +1,7 @@
 import { WaClient, createStore, ConsoleLogger } from 'zapo-js'
 import { createSqliteStore } from '@zapo-js/store-sqlite'
 import { voipPlugin } from '@zapo-js/voip'
+import { createMediaProcessor } from '@zapo-js/media-utils'
 import { createHmac } from 'crypto'
 import path from 'path'
 import fs from 'fs/promises'
@@ -102,7 +103,7 @@ export class SessionManager extends EventEmitter {
             }
         })
 
-        // Create client with VoIP plugin
+        // Create client with VoIP plugin and media processor
         const client = new WaClient(
             {
                 store,
@@ -114,6 +115,12 @@ export class SessionManager extends EventEmitter {
                 history: {
                     enabled: true,
                     requireFullSync: false
+                },
+                media: {
+                    processor: createMediaProcessor(),
+                    generateThumbnail: true,
+                    generateWaveform: true,
+                    normalizeVoiceNote: true
                 },
                 plugins: [voipPlugin({
                     maxConcurrentCalls: 1,
