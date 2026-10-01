@@ -1,0 +1,40 @@
+{
+  "timestamp": 1789052242799,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "94300352282641@lid",
+  "originalSender": "171790823342221@lid",
+  "messageId": "3EB00A2D005F6C1E0977B0",
+  "messageType": "interactiveMessage",
+  "fullMessage": {
+    "interactiveMessage": {
+      "nativeFlowMessage": {
+        "buttons": [
+          {
+            "name": "review_and_pay",
+            "buttonParamsJson": "{\"currency\":\"IDR\",\"payment_configuration\":\"\",\"payment_type\":\"upr\",\"total_amount\":{\"value\":0,\"offset\":100},\"reference_id\":\"4W5NKOV5EUJ\",\"type\":\"physical-goods\",\"order\":{\"status\":\"pending\",\"description\":\"\",\"order_type\":\"PAYMENT_REQUEST\",\"items\":[]},\"payment_settings\":[{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"bank_account\",\"identifier_type\":\"id_account_number\",\"identifier_value\":\"570201042006538\",\"institution_name\":\"Bank Rakyat Indonesia\",\"beneficiary_name\":\"AZRIAL GALIH PRASETYO\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Azrial Galih Prasetyo \"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"6283809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Az*** Ga*** Pr***\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"GoPay\",\"beneficiary_name\":\"Az**** Ga*** Pr******\"}}],\"additional_note\":\"\",\"share_payment_status\":false,\"is_soft_deleted\":false}"
+          }
+        ]
+      }
+    }
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "3EB00A2D005F6C1E0977B0",
+    "participant": "171790823342221@lid",
+    "quotedMessage": {
+      "interactiveMessage": {
+        "nativeFlowMessage": {
+          "buttons": [
+            {
+              "name": "review_and_pay",
+              "buttonParamsJson": "{\"currency\":\"IDR\",\"payment_configuration\":\"\",\"payment_type\":\"upr\",\"total_amount\":{\"value\":0,\"offset\":100},\"reference_id\":\"4W5NKOV5EUJ\",\"type\":\"physical-goods\",\"order\":{\"status\":\"pending\",\"description\":\"\",\"order_type\":\"PAYMENT_REQUEST\",\"items\":[]},\"payment_settings\":[{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"bank_account\",\"identifier_type\":\"id_account_number\",\"identifier_value\":\"570201042006538\",\"institution_name\":\"Bank Rakyat Indonesia\",\"beneficiary_name\":\"AZ*** GALIH PRASETYO\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Azrial Galih Prasetyo \"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"6283809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Az*** Ga*** Pr***\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"GoPay\",\"beneficiary_name\":\"Az**** Ga*** Pr******\"}}],\"additional_note\":\"\",\"share_payment_status\":false,\"is_soft_deleted\":false}"
+            }
+          ]
+        }
+      }
+    },
+    "quotedType": 0
+  }
+}

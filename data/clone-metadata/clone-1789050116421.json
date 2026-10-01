@@ -1,0 +1,42 @@
+{
+  "timestamp": 1789050116421,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "120363422223841910@g.us",
+  "originalSender": "171790823342221@lid",
+  "messageId": "3EB0D24CAB20FE2A904807",
+  "messageType": "interactiveResponseMessage",
+  "fullMessage": {
+    "interactiveResponseMessage": {
+      "body": {
+        "text": "Sent",
+        "format": 1
+      },
+      "nativeFlowResponseMessage": {
+        "name": "galaxy_message",
+        "paramsJson": "{\"wa_flow_response_params\":{\"title\":\"Azrial SBM\"}}",
+        "version": 3
+      }
+    }
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "3EB0D24CAB20FE2A904807",
+    "participant": "171790823342221@lid",
+    "quotedMessage": {
+      "interactiveResponseMessage": {
+        "body": {
+          "text": "Sent",
+          "format": 1
+        },
+        "nativeFlowResponseMessage": {
+          "name": "galaxy_message",
+          "paramsJson": "{\"wa_flow_response_params\":{\"title\":\"Azrial SBM\"}}",
+          "version": 3
+        }
+      }
+    },
+    "quotedType": 0
+  }
+}

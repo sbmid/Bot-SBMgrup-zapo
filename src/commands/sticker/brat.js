@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { processImageToSticker } from '../../utils/stickerHelper.js'
 
 if (!process.env.ALYACHAN_API_KEY) {
     throw new Error('ALYACHAN_API_KEY not found in .env file')
@@ -58,10 +59,18 @@ export default {
             })
             const imageBuffer = Buffer.from(imageResponse.data)
             
-            // Send as sticker - Zapo media-utils will auto-convert PNG to WebP
+            // Process dengan background putih (fix transparansi)
+            const processedBuffer = await processImageToSticker(imageBuffer)
+            
+            // Send as sticker (reply to command)
             await ctx.session.client.message.send(ctx.chatJid, {
                 type: 'sticker',
-                media: imageBuffer
+                media: processedBuffer
+            }, {
+                quote: {
+                    key: ctx.event.key,
+                    message: ctx.event.message
+                }
             })
             
             // React success

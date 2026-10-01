@@ -24,7 +24,14 @@ export default {
                 '8. contact - Contact vCard\n' +
                 '9. react - React to message\n' +
                 '10. poll - Poll message\n' +
-                '11. all - Run all tests'
+                '11. image - Send image\n' +
+                '12. video - Send video\n' +
+                '13. audio - Send audio\n' +
+                '14. voice - Send voice note\n' +
+                '15. document - Send document\n' +
+                '16. viewonce - View once image\n' +
+                '17. sticker - Send sticker\n' +
+                '18. all - Run all tests'
             )
         }
         
@@ -68,6 +75,34 @@ export default {
                     
                 case 'poll':
                     await testPoll(ctx)
+                    break
+                    
+                case 'image':
+                    await testImage(ctx)
+                    break
+                    
+                case 'video':
+                    await testVideo(ctx)
+                    break
+                    
+                case 'audio':
+                    await testAudio(ctx)
+                    break
+                    
+                case 'voice':
+                    await testVoiceNote(ctx)
+                    break
+                    
+                case 'document':
+                    await testDocument(ctx)
+                    break
+                    
+                case 'viewonce':
+                    await testViewOnce(ctx)
+                    break
+                    
+                case 'sticker':
+                    await testSticker(ctx)
                     break
                     
                 case 'all':
@@ -359,6 +394,21 @@ async function runAllTests(ctx) {
     await testPoll(ctx)
     await delay(2000)
     
+    await testImage(ctx)
+    await delay(3000)
+    
+    await testDocument(ctx)
+    await delay(2000)
+    
+    await testAudio(ctx)
+    await delay(3000)
+    
+    await testViewOnce(ctx)
+    await delay(2000)
+    
+    await testSticker(ctx)
+    await delay(2000)
+    
     if (ctx.event.key && ctx.event.message) {
         await testQuote(ctx)
         await delay(2000)
@@ -383,10 +433,240 @@ async function runAllTests(ctx) {
         await delay(1000)
     }
     
-    await send('*[+] All Tests Complete!*\n\nCheck messages above for results.')
+    await send('*[✅] All Tests Complete!*\n\n_Video and voice note skipped in auto-run (too large)_')
 }
 
 
 // Note: Button and List responses are handled by CommandHandler
 // When user clicks button/list, it comes back as buttonsResponseMessage or listResponseMessage
 // The selectedId (buttonId or rowId) will be in the message
+
+// Test 11: Image
+async function testImage(ctx) {
+    const { session, chatJid, send } = ctx
+    
+    await send('*[+] Test: Image*\n\nDownloading and sending image...')
+    
+    try {
+        const imageUrl = 'https://i.pinimg.com/736x/2f/ba/d0/2fbad0f048b7094f0cc93ce719d8ab54.jpg'
+        
+        // Download image using axios
+        const axios = (await import('axios')).default
+        const response = await axios.get(imageUrl, {
+            responseType: 'arraybuffer',
+            timeout: 15000
+        })
+        const imageBuffer = Buffer.from(response.data)
+        
+        // Send image with caption
+        await session.client.message.send(chatJid, {
+            type: 'image',
+            media: imageBuffer,
+            mimetype: 'image/jpeg',
+            caption: '*Test Image*\n\nImage sent successfully! ✅'
+        })
+    } catch (error) {
+        console.error('Image test error:', error)
+        await send(`*[!]* Image test failed: ${error.message}`)
+    }
+}
+
+// Test 12: Video
+async function testVideo(ctx) {
+    const { session, chatJid, send } = ctx
+    
+    await send('*[+] Test: Video*\n\nDownloading and sending video...\n\n_This may take a moment..._')
+    
+    try {
+        const videoUrl = 'https://archio.qzz.io/1769917909894-sdasedjiwef.mp4'
+        
+        // Download video using axios
+        const axios = (await import('axios')).default
+        const response = await axios.get(videoUrl, {
+            responseType: 'arraybuffer',
+            timeout: 30000,
+            maxContentLength: 50 * 1024 * 1024 // 50MB max
+        })
+        const videoBuffer = Buffer.from(response.data)
+        
+        // Send video with caption
+        await session.client.message.send(chatJid, {
+            type: 'video',
+            media: videoBuffer,
+            mimetype: 'video/mp4',
+            caption: '*Test Video*\n\nVideo sent successfully! ✅',
+            gifPlayback: false
+        })
+    } catch (error) {
+        console.error('Video test error:', error)
+        await send(`*[!]* Video test failed: ${error.message}`)
+    }
+}
+
+// Test 13: Audio
+async function testAudio(ctx) {
+    const { session, chatJid, send } = ctx
+    
+    await send('*[+] Test: Audio*\n\nDownloading and sending audio...')
+    
+    try {
+        const audioUrl = 'https://archio.qzz.io/1769917909894-sdasedjiwef.mp4'
+        
+        // Download audio using axios
+        const axios = (await import('axios')).default
+        const response = await axios.get(audioUrl, {
+            responseType: 'arraybuffer',
+            timeout: 30000
+        })
+        const audioBuffer = Buffer.from(response.data)
+        
+        // Send audio (regular audio file)
+        await session.client.message.send(chatJid, {
+            type: 'audio',
+            media: audioBuffer,
+            mimetype: 'audio/mp4'
+        })
+        
+        await send('*[+]* Audio sent successfully! ✅')
+    } catch (error) {
+        console.error('Audio test error:', error)
+        await send(`*[!]* Audio test failed: ${error.message}`)
+    }
+}
+
+// Test 14: Voice Note (PTT)
+async function testVoiceNote(ctx) {
+    const { session, chatJid, send } = ctx
+    
+    await send('*[+] Test: Voice Note*\n\nDownloading and sending voice note...')
+    
+    try {
+        const audioUrl = 'https://archio.qzz.io/1769917909894-sdasedjiwef.mp4'
+        
+        // Download audio using axios
+        const axios = (await import('axios')).default
+        const response = await axios.get(audioUrl, {
+            responseType: 'arraybuffer',
+            timeout: 30000
+        })
+        const audioBuffer = Buffer.from(response.data)
+        
+        // Send as voice note (PTT - Push To Talk)
+        await session.client.message.send(chatJid, {
+            type: 'audio',
+            media: audioBuffer,
+            mimetype: 'audio/ogg; codecs=opus',
+            ptt: true // Push-to-talk (voice note)
+        })
+        
+        await send('*[+]* Voice note sent successfully! ✅')
+    } catch (error) {
+        console.error('Voice note test error:', error)
+        await send(`*[!]* Voice note test failed: ${error.message}`)
+    }
+}
+
+// Test 15: Document
+async function testDocument(ctx) {
+    const { session, chatJid, send } = ctx
+    
+    await send('*[+] Test: Document*\n\nSending test document...')
+    
+    try {
+        // Create a simple text document
+        const documentContent = `
+╔════════════════════════════════╗
+║     SBMgrup Bot Test File      ║
+╚════════════════════════════════╝
+
+This is a test document sent by the bot.
+
+Features tested:
+✅ Document upload
+✅ Filename customization
+✅ Caption support
+
+Generated: ${new Date().toLocaleString()}
+
+Thank you for testing!
+        `.trim()
+        
+        const documentBuffer = Buffer.from(documentContent, 'utf-8')
+        
+        // Send document
+        await session.client.message.send(chatJid, {
+            type: 'document',
+            media: documentBuffer,
+            mimetype: 'text/plain',
+            fileName: 'SBMgrup_Test_Document.txt',
+            caption: '*Test Document*\n\nDocument sent successfully! ✅'
+        })
+    } catch (error) {
+        console.error('Document test error:', error)
+        await send(`*[!]* Document test failed: ${error.message}`)
+    }
+}
+
+// Test 16: View Once Image
+async function testViewOnce(ctx) {
+    const { session, chatJid, send } = ctx
+    
+    await send('*[+] Test: View Once*\n\nSending view-once image...')
+    
+    try {
+        const imageUrl = 'https://i.pinimg.com/736x/2f/ba/d0/2fbad0f048b7094f0cc93ce719d8ab54.jpg'
+        
+        // Download image using axios
+        const axios = (await import('axios')).default
+        const response = await axios.get(imageUrl, {
+            responseType: 'arraybuffer',
+            timeout: 15000
+        })
+        const imageBuffer = Buffer.from(response.data)
+        
+        // Send view-once image
+        await session.client.message.send(chatJid, {
+            type: 'image',
+            media: imageBuffer,
+            mimetype: 'image/jpeg',
+            caption: '*View Once Test*\n\nThis image can only be viewed once! 👁️'
+        }, {
+            viewOnce: true
+        })
+    } catch (error) {
+        console.error('View once test error:', error)
+        await send(`*[!]* View once test failed: ${error.message}`)
+    }
+}
+
+// Test 17: Sticker
+async function testSticker(ctx) {
+    const { session, chatJid, send } = ctx
+    
+    await send('*[+] Test: Sticker*\n\nDownloading and converting to sticker...')
+    
+    try {
+        const imageUrl = 'https://i.pinimg.com/736x/2f/ba/d0/2fbad0f048b7094f0cc93ce719d8ab54.jpg'
+        
+        // Download image using axios
+        const axios = (await import('axios')).default
+        const response = await axios.get(imageUrl, {
+            responseType: 'arraybuffer',
+            timeout: 15000
+        })
+        const imageBuffer = Buffer.from(response.data)
+        
+        // Send as sticker (using Zapo native processing)
+        await session.client.message.send(chatJid, {
+            type: 'sticker',
+            media: imageBuffer,
+            mimetype: 'image/webp'
+        })
+        
+        await send('*[+]* Sticker sent successfully! ✅')
+    } catch (error) {
+        console.error('Sticker test error:', error)
+        await send(`*[!]* Sticker test failed: ${error.message}`)
+    }
+}
+

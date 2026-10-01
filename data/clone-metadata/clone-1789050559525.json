@@ -1,0 +1,59 @@
+{
+  "timestamp": 1789050559525,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "94300352282641@lid",
+  "originalSender": "94300352282641@lid",
+  "messageId": "A5CF27AABBC84633E09241EAA3DEA276",
+  "messageType": "interactiveMessage",
+  "fullMessage": {
+    "interactiveMessage": {
+      "header": {
+        "title": "💳 Pembayaran SBM Premium",
+        "subtitle": "Konfirmasi pembayaran",
+        "hasMediaAttachment": false
+      },
+      "body": {
+        "text": "Silakan pilih metode pembayaran yang tersedia.\n\nTransfer ke salah satu rekening di bawah ini:"
+      },
+      "footer": {
+        "text": "Powered by SBM Bot • www.sbmku.sbs"
+      },
+      "nativeFlowMessage": {
+        "buttons": [
+          {
+            "name": "review_and_pay",
+            "buttonParamsJson": "{\"currency\":\"IDR\",\"payment_type\":\"upr\",\"total_amount\":{\"value\":50000,\"offset\":100},\"reference_id\":\"4W5NKOV5EUJ\",\"type\":\"physical-goods\",\"order\":{\"status\":\"pending\",\"order_type\":\"PAYMENT_REQUEST\"},\"payment_settings\":[{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"bank_account\",\"identifier_type\":\"id_account_number\",\"identifier_value\":\"570201042006538\",\"institution_name\":\"Bank Rakyat Indonesia\",\"beneficiary_name\":\"AZRIAL GALIH PRASETYO\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Azrial Galih Prasetyo \"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"6283809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Az*** Ga*** Pr***\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"GoPay\",\"beneficiary_name\":\"Az**** Ga*** Pr******\"}}],\"share_payment_status\":false,\"is_soft_deleted\":false}"
+          },
+          {
+            "name": "quick_reply",
+            "buttonParamsJson": "{\"display_text\":\"❌ Batalkan\",\"id\":\".cancel\"}"
+          },
+          {
+            "name": "quick_reply",
+            "buttonParamsJson": "{\"display_text\":\"📞 Hubungi Admin\",\"id\":\".owner\"}"
+          }
+        ]
+      }
+    }
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "A5CF27AABBC84633E09241EAA3DEA276",
+    "participant": "94300352282641@lid",
+    "quotedMessage": {
+      "interactiveMessage": {
+        "nativeFlowMessage": {
+          "buttons": [
+            {
+              "name": "review_and_pay",
+              "buttonParamsJson": "{\"currency\":\"IDR\",\"payment_type\":\"upr\",\"total_amount\":{\"value\":0,\"offset\":100},\"reference_id\":\"4W5NKOV5EUJ\",\"type\":\"physical-goods\",\"order\":{\"status\":\"pending\",\"order_type\":\"PAYMENT_REQUEST\"},\"payment_settings\":[{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"bank_account\",\"identifier_type\":\"id_account_number\",\"identifier_value\":\"570201042006538\",\"institution_name\":\"Bank Rakyat Indonesia\",\"beneficiary_name\":\"AZRIAL GALIH PRASETYO\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Azrial Galih Prasetyo \"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"6283809720392\",\"institution_name\":\"DANA\",\"beneficiary_name\":\"Az*** Ga*** Pr***\"}},{\"type\":\"payment_account\",\"payment_account\":{\"account_type\":\"digital_wallet\",\"identifier_type\":\"phone_number\",\"identifier_value\":\"+62 83809720392\",\"institution_name\":\"GoPay\",\"beneficiary_name\":\"Az**** Ga*** Pr******\"}}],\"share_payment_status\":false,\"is_soft_deleted\":false}"
+            }
+          ]
+        }
+      }
+    },
+    "quotedType": 0
+  }
+}

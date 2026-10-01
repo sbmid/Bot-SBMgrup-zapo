@@ -1,0 +1,113 @@
+<div class="container">
+    <div class="header">
+        <h1><i class="fab fa-whatsapp"></i> SBMgrup Bot</h1>
+        <p>WhatsApp Multi-Session Bot with Advanced Features</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <i class="fas fa-robot"></i>
+            <h3><%= stats.activeSessions %></h3>
+            <p>Active Sessions</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-terminal"></i>
+            <h3><%= stats.totalCommands %></h3>
+            <p>Commands Available</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-clock"></i>
+            <h3><%= stats.uptimeFormatted %></h3>
+            <p>Uptime</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-memory"></i>
+            <h3><%= stats.memoryUsed %>GB</h3>
+            <p>Memory Used</p>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2><i class="fas fa-info-circle"></i> About Bot</h2>
+        <p style="line-height: 1.8; font-size: 1.1em;">
+            SBMgrup Bot adalah WhatsApp bot multi-session yang dirancang untuk membantu 
+            pengelolaan grup dan menyediakan berbagai fitur menarik. Bot ini menggunakan 
+            teknologi modern dan arsitektur modular untuk memastikan performa yang optimal 
+            dan mudah dikembangkan.
+        </p>
+    </div>
+    
+    <div class="section">
+        <h2><i class="fas fa-star"></i> Key Features</h2>
+        <div class="features-grid">
+            <% const features = [
+                { icon: 'comments', name: 'Multi-Session', color: '#3b82f6' },
+                { icon: 'brain', name: 'AI Integration', color: '#8b5cf6' },
+                { icon: 'gamepad', name: 'Game System', color: '#ec4899' },
+                { icon: 'image', name: 'Sticker Maker', color: '#f59e0b' },
+                { icon: 'music', name: 'Music Player', color: '#10b981' },
+                { icon: 'download', name: 'Downloader', color: '#06b6d4' },
+                { icon: 'users', name: 'Group Manager', color: '#6366f1' },
+                { icon: 'tools', name: 'Tools & Utils', color: '#f97316' },
+                { icon: 'phone', name: 'VoIP Detection', color: '#14b8a6' },
+                { icon: 'chart-line', name: 'Web Dashboard', color: '#a855f7' },
+                { icon: 'lock', name: 'Confess System', color: '#ef4444' },
+                { icon: 'code', name: 'RESTful API', color: '#22c55e' }
+            ]; %>
+            <% features.forEach(feature => { %>
+                <div class="feature-item">
+                    <i class="fas fa-<%= feature.icon %>" style="color: <%= feature.color %>;"></i>
+                    <p><%= feature.name %></p>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2><i class="fas fa-layer-group"></i> Technology Stack</h2>
+        <div class="tech-stack">
+            <% const techStack = [
+                { icon: 'node-js', name: `Node.js ${stats.nodeVersion}`, type: 'fab' },
+                { icon: 'js', name: 'Zapo-JS', type: 'fab' },
+                { icon: 'database', name: 'SQLite3', type: 'fas' },
+                { icon: 'server', name: 'Express.js', type: 'fas' },
+                { icon: 'image', name: 'Sharp', type: 'fas' },
+                { icon: 'robot', name: 'AI APIs', type: 'fas' },
+                { icon: stats.platformIcon, name: stats.platformName, type: 'fab' }
+            ]; %>
+            <% techStack.forEach(tech => { %>
+                <div class="tech-badge">
+                    <i class="<%= tech.type %> fa-<%= tech.icon %>"></i> <%= tech.name %>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2><i class="fas fa-user-tie"></i> Developer</h2>
+        <div class="developer">
+            <div class="dev-avatar">
+                <i class="fas fa-code"></i>
+            </div>
+            <div class="dev-info">
+                <h3>Azrial Galih P.</h3>
+                <p><strong>Age:</strong> 19 years old</p>
+                <p><strong>Role:</strong> Full Stack Developer</p>
+                <p><strong>Project:</strong> SBMgrup Bot</p>
+                <p style="margin-top: 10px;">
+                    Passionate developer focused on creating efficient and scalable 
+                    WhatsApp automation solutions with modern technology.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2025 SBMgrup Bot. Developed with dedication by Azrial Galih P.</p>
+        <p style="margin-top: 10px; font-size: 0.9em;">
+            <a href="http://localhost:3000">
+                <i class="fas fa-home"></i> Main Dashboard (Port 3000)
+            </a>
+        </p>
+    </div>
+</div>

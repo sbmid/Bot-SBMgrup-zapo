@@ -1,0 +1,44 @@
+{
+  "timestamp": 1789054435070,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "120363422223841910@g.us",
+  "originalSender": "94300352282641@lid",
+  "messageId": "A5C11639BD4B06184BB30DE7143530CE",
+  "messageType": "extendedTextMessage",
+  "fullMessage": {
+    "extendedTextMessage": {
+      "endCardTiles": [],
+      "text": "@all",
+      "previewType": 0,
+      "contextInfo": {
+        "mentionedJid": [],
+        "groupMentions": [],
+        "statusAttributions": [],
+        "nonJidMentions": 1
+      },
+      "inviteLinkGroupTypeV2": 0
+    }
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "A5C11639BD4B06184BB30DE7143530CE",
+    "participant": "94300352282641@lid",
+    "quotedMessage": {
+      "extendedTextMessage": {
+        "endCardTiles": [],
+        "text": "@all",
+        "previewType": 0,
+        "contextInfo": {
+          "mentionedJid": [],
+          "groupMentions": [],
+          "statusAttributions": [],
+          "nonJidMentions": 1
+        },
+        "inviteLinkGroupTypeV2": 0
+      }
+    },
+    "quotedType": 0
+  }
+}

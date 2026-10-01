@@ -1,0 +1,22 @@
+{
+  "timestamp": 1789050290569,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "120363422223841910@g.us",
+  "originalSender": "171790823342221@lid",
+  "messageId": "3EB08175E3FE57EC76522C",
+  "messageType": "conversation",
+  "fullMessage": {
+    "conversation": "..."
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "3EB08175E3FE57EC76522C",
+    "participant": "171790823342221@lid",
+    "quotedMessage": {
+      "conversation": "..."
+    },
+    "quotedType": 0
+  }
+}

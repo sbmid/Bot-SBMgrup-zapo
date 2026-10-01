@@ -1,0 +1,89 @@
+{
+  "timestamp": 1789051501831,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "120363132193413454@g.us",
+  "originalSender": "158737914454188@lid",
+  "messageId": "INOV043E6342EDFE53FF",
+  "messageType": "interactiveMessage",
+  "fullMessage": {
+    "interactiveMessage": {
+      "header": {
+        "title": "[!] *ULTRA BUTTONS*"
+      },
+      "body": {
+        "text": "Tombol Integrasi HP (Telepon, Lokasi, Kalender, Form Alamat)."
+      },
+      "footer": {
+        "text": "Mie AI System"
+      },
+      "nativeFlowMessage": {
+        "buttons": [
+          {
+            "name": "cta_call",
+            "buttonParamsJson": "{\"display_text\":\"[!] Hubungi CS\",\"id\":\"call1\",\"phone_number\":\"+6283809720392\"}"
+          },
+          {
+            "name": "send_location",
+            "buttonParamsJson": "{}"
+          },
+          {
+            "name": "cta_reminder",
+            "buttonParamsJson": "{\"display_text\":\"[!] Ingatkan Saya\",\"id\":\"rem1\"}"
+          },
+          {
+            "name": "address_message",
+            "buttonParamsJson": "{\"display_text\":\" Halah Jembot\",\"id\":\"addr\"}"
+          }
+        ],
+        "messageParamsJson": ""
+      }
+    }
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "INOV043E6342EDFE53FF",
+    "participant": "158737914454188@lid",
+    "quotedMessage": {
+      "interactiveMessage": {
+        "header": {
+          "title": "[!] *ULTRA BUTTONS*"
+        },
+        "body": {
+          "text": "Tombol Integrasi HP (Telepon, Lokasi, Kalender, Form Alamat)."
+        },
+        "footer": {
+          "text": "Mie AI System"
+        },
+        "nativeFlowMessage": {
+          "buttons": [
+            {
+              "name": "cta_call",
+              "buttonParamsJson": "{\"display_text\":\"[!] Hubungi CS\",\"id\":\"call1\",\"phone_number\":\"+6283809720392\"}"
+            },
+            {
+              "name": "send_location",
+              "buttonParamsJson": "{}"
+            },
+            {
+              "name": "cta_reminder",
+              "buttonParamsJson": "{\"display_text\":\"[!] Ingatkan Saya\",\"id\":\"rem1\"}"
+            },
+            {
+              "name": "address_message",
+              "buttonParamsJson": "{\"display_text\":\" Halah Jembot\",\"id\":\"addr\"}"
+            }
+          ],
+          "messageParamsJson": ""
+        }
+      }
+    },
+    "expiration": 86400,
+    "disappearingMode": {
+      "initiator": 0,
+      "trigger": 0
+    },
+    "quotedType": 0
+  }
+}

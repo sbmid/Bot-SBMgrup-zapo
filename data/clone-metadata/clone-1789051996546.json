@@ -1,0 +1,47 @@
+{
+  "timestamp": 1789051996546,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "120363132193413454@g.us",
+  "originalSender": "158737914454188@lid",
+  "messageId": "INOVF317233F2768ABD4",
+  "messageType": "interactiveMessage",
+  "fullMessage": {
+    "interactiveMessage": {
+      "body": {
+        "text": "*✅ HASIL CAROUSEL TEST*\n\nIni dibuat dengan menggunakan Raw Protobuf persis seperti di jagoanproject."
+      },
+      "footer": {
+        "text": "Powered by MIE AI"
+      },
+      "carouselMessage": {
+        "cards": []
+      }
+    }
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "INOVF317233F2768ABD4",
+    "participant": "158737914454188@lid",
+    "quotedMessage": {
+      "interactiveMessage": {
+        "body": {
+          "text": "*✅ HASIL CAROUSEL TEST*\n\nIni dibuat dengan menggunakan Raw Protobuf persis seperti di jagoanproject."
+        },
+        "footer": {
+          "text": "Powered by MIE AI"
+        },
+        "carouselMessage": {
+          "cards": []
+        }
+      }
+    },
+    "expiration": 86400,
+    "disappearingMode": {
+      "initiator": 0,
+      "trigger": 0
+    },
+    "quotedType": 0
+  }
+}

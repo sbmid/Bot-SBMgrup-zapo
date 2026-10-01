@@ -1,15 +1,10 @@
 import axios from 'axios'
-
-if (!process.env.ALYACHAN_API_KEY) {
-    throw new Error('ALYACHAN_API_KEY not found in .env file')
-}
-
-const API_KEY = process.env.ALYACHAN_API_KEY
+import { createAnimatedSticker } from '../../utils/stickerHelper.js'
 
 export default {
     name: 'bratgif',
     category: 'sticker',
-    aliases: ['bratg'],
+    aliases: ['bratvid', 'bratvideo'],
     
     async execute(ctx) {
         const { send, args } = ctx
@@ -18,9 +13,9 @@ export default {
         
         if (!text) {
             return await send(
-                '*[+] Brat GIF Sticker*\n\n' +
+                '*[+] Brat Animated Sticker*\n\n' +
                 'Usage: .bratgif <text>\n' +
-                'Alias: .bratg\n\n' +
+                'Alias: .bratvid / .bratvideo\n\n' +
                 'Example:\n.bratgif Hello World'
             )
         }
@@ -39,29 +34,62 @@ export default {
         } catch (e) {}
         
         try {
-            // Get GIF URL from API
-            const response = await axios.get(`https://api.alyachan.dev/api/canvas/bratgif?text=${encodeURIComponent(text)}`, {
-                headers: {
-                    'Authorization': `Bearer ${API_KEY}`
-                }
-            })
+            let gifBuffer = null
+            let usedApi = null
             
-            if (!response.data.status || !response.data.data?.url) {
-                return await send('*[!]* Failed to generate brat GIF sticker')
+            // API endpoints (primary → fallback)
+            const apis = [
+                {
+                    name: 'haidarxd',
+                    url: `https://api.haidarxd.my.id/api/v1/maker/bratvidhd?text=${encodeURIComponent(text)}&apikey=haidarapis-7e2b9e3374b04f999b4c90865bb05949`
+                },
+                {
+                    name: 'siputzx',
+                    url: `https://api.siputzx.my.id/api/m/brat?text=${encodeURIComponent(text)}&isAnimated=true&delay=500`
+                }
+            ]
+            
+            // Try APIs in order
+            for (const api of apis) {
+                try {
+                    console.log(`[BratGif] Trying API: ${api.name}`)
+                    
+                    const response = await axios.get(api.url, {
+                        responseType: 'arraybuffer',
+                        timeout: 30000
+                    })
+                    
+                    gifBuffer = Buffer.from(response.data)
+                    usedApi = api.name
+                    console.log(`[BratGif] Success with: ${api.name}`)
+                    break
+                    
+                } catch (apiError) {
+                    console.log(`[BratGif] ${api.name} failed:`, apiError.message)
+                    // Continue to next API
+                }
             }
             
-            const gifUrl = response.data.data.url
+            // All APIs failed
+            if (!gifBuffer) {
+                throw new Error('All API endpoints failed')
+            }
             
-            // Download GIF from URL
-            const gifResponse = await axios.get(gifUrl, {
-                responseType: 'arraybuffer'
+            // Process to animated sticker
+            const stickerBuffer = await createAnimatedSticker(gifBuffer, {
+                packname: 'SBMgrup',
+                author: 'Bot'
             })
-            const gifBuffer = Buffer.from(gifResponse.data)
             
-            // Send as sticker - Zapo media-utils will auto-convert GIF to animated WebP
+            // Send as sticker (reply to command)
             await ctx.session.client.message.send(ctx.chatJid, {
                 type: 'sticker',
-                media: gifBuffer
+                media: stickerBuffer
+            }, {
+                quote: {
+                    key: ctx.event.key,
+                    message: ctx.event.message
+                }
             })
             
             // React success
@@ -73,8 +101,10 @@ export default {
                 })
             } catch (e) {}
             
+            console.log(`[BratGif] Completed using ${usedApi} API`)
+            
         } catch (error) {
-            console.error('BratGIF generation error:', error)
+            console.error('[BratGif] Generation error:', error)
             
             // React error
             try {
@@ -86,10 +116,10 @@ export default {
             } catch (e) {}
             
             let errorMsg = '*[!]* Sticker generation failed\n\n'
-            if (error.response?.status === 503) {
-                errorMsg += 'API service unavailable. Try again later.'
-            } else if (error.response?.status === 401) {
-                errorMsg += 'API key invalid'
+            if (error.message === 'All API endpoints failed') {
+                errorMsg += 'All API services unavailable. Try again later.'
+            } else if (error.code === 'ECONNABORTED') {
+                errorMsg += 'Request timeout. Try shorter text.'
             } else {
                 errorMsg += error.message
             }

@@ -1,0 +1,54 @@
+{
+  "timestamp": 1789050000231,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "120363422223841910@g.us",
+  "originalSender": "171790823342221@lid",
+  "messageId": "3EB00DF0B074B1D9FBF08D",
+  "messageType": "interactiveMessage",
+  "fullMessage": {
+    "interactiveMessage": {
+      "header": {
+        "title": "Fiora Sylvie"
+      },
+      "body": {
+        "text": "HI, Ini BOT"
+      },
+      "nativeFlowMessage": {
+        "buttons": [
+          {
+            "name": "inapp_signup",
+            "buttonParamsJson": "{}"
+          }
+        ],
+        "messageParamsJson": "{}"
+      }
+    }
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "3EB00DF0B074B1D9FBF08D",
+    "participant": "171790823342221@lid",
+    "quotedMessage": {
+      "interactiveMessage": {
+        "header": {
+          "title": "Fiora Sylvie"
+        },
+        "body": {
+          "text": "https://fiora.nixel.my.id/"
+        },
+        "nativeFlowMessage": {
+          "buttons": [
+            {
+              "name": "inapp_signup",
+              "buttonParamsJson": "{}"
+            }
+          ],
+          "messageParamsJson": "{}"
+        }
+      }
+    },
+    "quotedType": 0
+  }
+}

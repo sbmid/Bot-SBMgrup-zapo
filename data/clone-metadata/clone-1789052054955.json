@@ -1,0 +1,27 @@
+{
+  "timestamp": 1789052054955,
+  "clonedBy": "94300352282641@lid",
+  "chatJid": "120363132193413454@g.us",
+  "originalSender": "158737914454188@lid",
+  "messageId": "INOVDF4063C8B1C905A7",
+  "messageType": "conversation",
+  "fullMessage": {
+    "conversation": "# 💻 TYPE 5: CODE BLOCK\n## JavaScript — Auto Syntax Highlight:\nasync function getProfile(userId) {\n  const user = await db.findById(userId)\n  if (!user) throw new Error('User not found')\n  \n  const score = user.xp * 1.5 + 100\n  return { name: user.name, score }\n}\n## Python — Auto Syntax Highlight:\ndef fibonacci(n):\n    # Rekursif fibonacci\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nresult = fibonacci(10)\nprint(f\"Fib(10) = {result}\")\n## Manual Highlight (tanpa tokenizer):\nconst x = 42\n// Ini komentar (abu-abu)\n✅ Test TYPE 5 selesai!"
+  },
+  "contextInfo": {
+    "mentionedJid": [],
+    "groupMentions": [],
+    "statusAttributions": [],
+    "stanzaId": "INOVDF4063C8B1C905A7",
+    "participant": "158737914454188@lid",
+    "quotedMessage": {
+      "conversation": "# 💻 TYPE 5: CODE BLOCK\n## JavaScript — Auto Syntax Highlight:\nasync function getProfile(userId) {\n  const user = await db.findById(userId)\n  if (!user) throw new Error('User not found')\n  \n  const score = user.xp * 1.5 + 100\n  return { name: user.name, score }\n}\n## Python — Auto Syntax Highlight:\ndef fibonacci(n):\n    # Rekursif fibonacci\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nresult = fibonacci(10)\nprint(f\"Fib(10) = {result}\")\n## Manual Highlight (tanpa tokenizer):\nconst x = 42\n// Ini komentar (abu-abu)\n✅ Test TYPE 5 selesai!"
+    },
+    "expiration": 86400,
+    "disappearingMode": {
+      "initiator": 0,
+      "trigger": 0
+    },
+    "quotedType": 0
+  }
+}

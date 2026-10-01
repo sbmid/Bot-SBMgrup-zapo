@@ -1,0 +1,549 @@
+
+
+================================================================================
+PAYMENT SYSTEM SPECIFICATION - BOT JOIN GROUP SERVICE
+================================================================================
+Project: SBMgrup WhatsApp Bot
+Developer: Azrial Galih P. (19 tahun)
+Date: 2025
+Version: 1.0.0
+
+================================================================================
+1. OVERVIEW
+================================================================================
+Sistem pembayaran untuk layanan bot join grup WhatsApp.
+User bayar sekali → Bot join grup → Bot stay di grup (selama bot aktif).
+
+Model Bisnis: "Pay-to-Join" bukan sewa/subscription.
+Pricing: Flat Rp 10.000 per grup.
+
+DISCLAIMER: Bot akan stay di grup selama bot aktif. Tidak ada garansi 
+"permanent" karena developer bisa pensiun atau bot mengalami error fatal.
+
+================================================================================
+2. PAYMENT GATEWAY
+================================================================================
+Provider: CiaaTopUp (https://www.ciaatopup.com)
+Method: QRIS (DANA Bisnis)
+
+CREDENTIALS (TEST):
+- Merchant ID: CT-1BUOAJB
+- Secret Key: CT-Key-MHII7F02QIG5E8VDZ7DPP44C
+- API Base URL: https://www.ciaatopup.com/v1
+
+NOTE: Secret key akan diganti setelah test selesai.
+
+WEBHOOK URL:
+https://[DOMAIN-BOT]/webhook/payment
+
+Signature: HMAC-SHA256 via header X-Signature
+Webhook Event: deposit.status
+
+================================================================================
+3. USER FLOW
+================================================================================
+
+STEP 1: User Order
+-------------------
+User mengirim invite link grup ke bot via private chat.
+Format: https://chat.whatsapp.com/XXXXXXXXXX
+
+STEP 2: Bot Validation
+-----------------------
+Bot melakukan validasi:
+1. Extract invite code dari link
+2. Query group info via client.group.queryGroupInviteInfo(code)
+3. Check requirements:
+   - Grup tidak penuh (size < 1024 member)
+   - Grup buka/open (tidak perlu approval admin)
+   - Invite code masih valid (tidak expired/revoked)
+
+STEP 3: Generate Payment
+-------------------------
+Jika validasi OK:
+1. Create order di database (status: pending)
+2. Request deposit via CiaaTopUp API
+   - Endpoint: POST /v1/deposit
+   - Body: { merchantId, secretKey, nominal: 10000 }
+   - Response: { orderId, total, qrDataUri }
+3. Send QRIS ke user dengan info:
+   - Nama grup
+   - Total pembayaran (Rp 10.000 + admin fee)
+   - Order ID
+   - Expire time (biasanya 15-30 menit)
+
+STEP 4: User Payment
+---------------------
+User scan QRIS dan bayar via DANA/OVO/GoPay/dll.
+
+STEP 5: Webhook Notification
+-----------------------------
+CiaaTopUp mengirim webhook POST request ke bot:
+URL: https://[DOMAIN-BOT]/webhook/payment
+Headers: X-Signature (HMAC-SHA256)
+Body: {
+  "event": "deposit.status",
+  "orderId": "DEP-1710000000000",
+  "status": "Paid"
+}
+
+STEP 6: Bot Action
+------------------
+Webhook handler:
+1. Verify X-Signature (HMAC-SHA256 dengan secret key)
+2. Update order status di database (pending → success)
+3. Join grup via client.group.joinGroupViaInvite(code)
+4. Send konfirmasi ke user:
+   "Bot sudah berhasil join grup [Nama Grup]"
+5. Log transaction untuk accounting
+
+STEP 7: Auto-Withdraw
+---------------------
+Background scheduler (cron job) check saldo CiaaTopUp:
+- Interval: Setiap 6 jam atau 12 jam
+- Check: GET /v1/profile
+- Jika balance >= Rp 20.000:
+  1. Request withdraw via POST /v1/transfer/create
+     - Bank code: DANA
+     - Account: 083809720392
+     - Name: Azrial Galih Prasetyo
+     - Amount: [saldo - buffer Rp 5.000]
+  2. Log withdraw request
+  3. Status: Pending (manual approval by CiaaTopUp admin)
+
+================================================================================
+4. DATABASE SCHEMA
+================================================================================
+
+Table: payment_orders
+---------------------
+- id (INTEGER PRIMARY KEY)
+- order_id (TEXT UNIQUE) - CiaaTopUp order ID
+- user_jid (TEXT) - WhatsApp JID user
+- group_invite_code (TEXT) - Invite code grup
+- group_jid (TEXT) - Group JID (setelah join)
+- group_name (TEXT) - Nama grup
+- amount (INTEGER) - Nominal payment (10000)
+- total (INTEGER) - Total dengan admin fee
+- status (TEXT) - pending/success/failed/expired
+- qr_data_uri (TEXT) - QRIS base64 image
+- created_at (INTEGER) - Timestamp create
+- paid_at (INTEGER) - Timestamp payment success
+- expired_at (INTEGER) - Timestamp expire payment
+
+Table: withdraw_logs
+--------------------
+- id (INTEGER PRIMARY KEY)
+- ref_id (TEXT UNIQUE) - Withdraw reference ID
+- amount (INTEGER) - Nominal withdraw
+- admin_fee (INTEGER) - Biaya admin
+- status (TEXT) - pending/success/failed
+- created_at (INTEGER) - Timestamp request
+- paid_at (INTEGER) - Timestamp success
+
+Table: transaction_logs
+-----------------------
+- id (INTEGER PRIMARY KEY)
+- type (TEXT) - payment/withdraw
+- order_id (TEXT) - Reference ke order atau withdraw
+- amount (INTEGER) - Nominal
+- balance_before (INTEGER) - Saldo sebelum
+- balance_after (INTEGER) - Saldo sesudah
+- created_at (INTEGER) - Timestamp
+
+================================================================================
+5. API ENDPOINTS (CiaaTopUp)
+================================================================================
+
+1. Create Deposit (Generate QRIS)
+----------------------------------
+POST https://www.ciaatopup.com/v1/deposit
+Headers: Content-Type: application/json
+Body: {
+  "merchantId": "CT-1BUOAJB",
+  "secretKey": "CT-Key-MHII7F02QIG5E8VDZ7DPP44C",
+  "nominal": 10000
+}
+
+Response:
+{
+  "status": true,
+  "message": "Tiket deposit berhasil dibuat.",
+  "data": {
+    "orderId": "DEP-1710000000000",
+    "total": 10450,
+    "qrDataUri": "data:image/png;base64,iVBORw0KGgo..."
+  }
+}
+
+2. Check Deposit Status
+------------------------
+POST https://www.ciaatopup.com/v1/deposit/status
+Body: {
+  "merchantId": "CT-1BUOAJB",
+  "secretKey": "CT-Key-MHII7F02QIG5E8VDZ7DPP44C",
+  "orderId": "DEP-1710000000000"
+}
+
+Response:
+{
+  "status": true,
+  "data": {
+    "ref_id": "unique_trx_123",
+    "status": "Success",
+    "sn": "10029388123901",
+    "price": 10000
+  }
+}
+
+3. Check Balance
+----------------
+POST https://www.ciaatopup.com/v1/profile
+Body: {
+  "merchantId": "CT-1BUOAJB",
+  "secretKey": "CT-Key-MHII7F02QIG5E8VDZ7DPP44C"
+}
+
+Response:
+{
+  "status": true,
+  "data": {
+    "name": "Toko Pulsa Jaya",
+    "email": "reseller@email.com",
+    "tier": "Reseller",
+    "balance": 125000
+  }
+}
+
+4. Create Withdraw
+------------------
+POST https://www.ciaatopup.com/v1/transfer/create
+Body: {
+  "merchantId": "CT-1BUOAJB",
+  "secretKey": "CT-Key-MHII7F02QIG5E8VDZ7DPP44C",
+  "bank_code": "DANA",
+  "account_number": "083809720392",
+  "account_name": "Azrial Galih Prasetyo",
+  "amount": 20000,
+  "ref_id": "wd_unique_001"
+}
+
+Response:
+{
+  "status": true,
+  "message": "Permintaan penarikan dana berhasil diajukan...",
+  "data": {
+    "ref_id": "wd_unique_001",
+    "status": "Pending",
+    "amount": 20000,
+    "admin_fee": 2500
+  }
+}
+
+5. Check Withdraw Status
+-------------------------
+POST https://www.ciaatopup.com/v1/status
+Body: {
+  "merchantId": "CT-1BUOAJB",
+  "secretKey": "CT-Key-MHII7F02QIG5E8VDZ7DPP44C",
+  "ref_id": "wd_unique_001"
+}
+
+Response:
+{
+  "status": true,
+  "data": {
+    "ref_id": "wd_unique_001",
+    "status": "Success",
+    "amount": 20000,
+    "admin_fee": 2500,
+    "paid_at": "2026-07-28T12:00:00Z"
+  }
+}
+
+================================================================================
+6. WEBHOOK SIGNATURE VERIFICATION
+================================================================================
+
+CiaaTopUp mengirim header X-Signature untuk verify request.
+Signature: HMAC-SHA256(payload, secretKey)
+
+Verification Code:
+------------------
+import crypto from 'crypto'
+
+function verifySignature(payload, signature, secretKey) {
+  const hash = crypto
+    .createHmac('sha256', secretKey)
+    .update(JSON.stringify(payload))
+    .digest('hex')
+  
+  return hash === signature
+}
+
+Usage:
+------
+const signature = req.headers['x-signature']
+const payload = req.body
+const isValid = verifySignature(payload, signature, SECRET_KEY)
+
+if (!isValid) {
+  return res.status(401).json({ error: 'Invalid signature' })
+}
+
+================================================================================
+7. COMMANDS
+================================================================================
+
+User Commands (via Private Chat):
+----------------------------------
+1. .joinbot <invite_link>
+   - Order bot untuk join grup
+   - Generate QRIS payment
+   - Validasi grup requirements
+
+2. .cekorder <order_id>
+   - Cek status order (pending/success/failed)
+   - Show payment details
+   - Show expire time
+
+3. .listbot
+   - List grup yang sudah dibayar
+   - Show status (joined/pending)
+
+Owner Commands:
+---------------
+1. .ceksaldo
+   - Check balance CiaaTopUp
+   - Show pending orders count
+   - Show total revenue
+
+2. .withdraw <amount>
+   - Manual trigger withdraw
+   - Minimum Rp 20.000
+   - Target: DANA 083809720392
+
+3. .listorder [status]
+   - List all orders
+   - Filter by status (optional)
+   - Show statistics
+
+4. .cancelorder <order_id>
+   - Cancel pending order
+   - Refund if paid (manual process)
+
+================================================================================
+8. VALIDASI GRUP
+================================================================================
+
+Requirements sebelum generate payment:
+--------------------------------------
+1. Invite code valid (tidak expired/revoked)
+2. Grup tidak penuh (member < 1024)
+3. Grup buka/open (tidak perlu approval)
+4. Bot belum join grup tersebut
+5. User belum punya pending order untuk grup tersebut
+
+Error Messages:
+---------------
+- "Invite link tidak valid atau sudah expired"
+- "Grup sudah penuh (1024 member), bot tidak bisa join"
+- "Grup memerlukan persetujuan admin, mohon ubah setting grup"
+- "Bot sudah ada di grup ini"
+- "Kamu masih punya order pending untuk grup ini"
+
+================================================================================
+9. AUTO-WITHDRAW SCHEDULER
+================================================================================
+
+Scheduler: node-cron atau setInterval
+Interval: Setiap 6 jam (atau 12 jam)
+
+Logic:
+------
+1. Check balance via API /v1/profile
+2. If balance >= Rp 20.000:
+   a. Calculate withdraw amount (balance - Rp 5.000 buffer)
+   b. Generate unique ref_id (wd_timestamp_random)
+   c. Request withdraw via API /v1/transfer/create
+   d. Log to database (status: pending)
+   e. Send notification ke owner via WA
+3. Background check withdraw status setiap 1 jam
+4. Update status jika sudah success/failed
+
+Withdraw Target:
+----------------
+Bank: DANA E-Wallet
+Account: 083809720392
+Name: Azrial Galih Prasetyo
+
+================================================================================
+10. ERROR HANDLING
+================================================================================
+
+Payment Errors:
+---------------
+- Timeout: Order expired (15-30 menit)
+- Failed: Payment gagal (insufficient balance, dll)
+- Expired: QRIS sudah tidak valid
+
+Bot Join Errors:
+----------------
+- Invite revoked: Code sudah di-rotate admin
+- Group full: Grup penuh setelah payment
+- Permission denied: Grup setting berubah (butuh approval)
+- Already member: Bot sudah di grup (tidak refund)
+
+Webhook Errors:
+---------------
+- Invalid signature: Reject request
+- Duplicate event: Check database, skip jika sudah processed
+- Unknown order_id: Log dan skip
+
+Withdraw Errors:
+----------------
+- Insufficient balance: Minimum tidak tercapai
+- Invalid account: Nomor/nama salah
+- API error: Retry dengan exponential backoff
+
+================================================================================
+11. SECURITY
+================================================================================
+
+1. Webhook Signature Verification
+   - Always verify X-Signature header
+   - Use constant-time comparison
+   - Log failed attempts
+
+2. API Credentials
+   - Store in .env file (not in code)
+   - Never commit to git
+   - Rotate secret key periodically
+
+3. Database
+   - No sensitive data in logs
+   - Encrypt payment details if needed
+   - Regular backup
+
+4. Rate Limiting
+   - Max 3 order per user per hour
+   - Max 1 pending order per grup
+   - Cooldown 5 menit after failed payment
+
+================================================================================
+12. FILES TO CREATE
+================================================================================
+
+Database:
+---------
+src/database/payment.js
+
+Routes:
+-------
+src/routes/webhook.js
+
+Controllers:
+------------
+src/controllers/webhookController.js
+src/controllers/paymentController.js
+
+Services:
+---------
+src/services/PaymentService.js
+src/services/WithdrawService.js
+
+Commands:
+---------
+src/commands/payment/joinbot.js
+src/commands/payment/cekorder.js
+src/commands/payment/listbot.js
+src/commands/owner/ceksaldo.js
+src/commands/owner/withdraw.js
+src/commands/owner/listorder.js
+src/commands/owner/cancelorder.js
+
+Scheduler:
+----------
+src/scheduler/withdrawScheduler.js
+
+Utils:
+------
+src/utils/signature.js (HMAC verification)
+src/utils/ciaatopup.js (API wrapper)
+
+Config:
+-------
+.env (add CIAATOPUP_* variables)
+
+================================================================================
+13. ENVIRONMENT VARIABLES
+================================================================================
+
+Add to .env:
+------------
+# CiaaTopUp Payment Gateway
+CIAATOPUP_MERCHANT_ID=CT-1BUOAJB
+CIAATOPUP_SECRET_KEY=CT-Key-MHII7F02QIG5E8VDZ7DPP44C
+CIAATOPUP_API_URL=https://www.ciaatopup.com/v1
+
+# Withdraw Settings
+WITHDRAW_MIN_AMOUNT=20000
+WITHDRAW_BANK_CODE=DANA
+WITHDRAW_ACCOUNT_NUMBER=083809720392
+WITHDRAW_ACCOUNT_NAME=Azrial Galih Prasetyo
+
+# Pricing
+BOT_JOIN_PRICE=10000
+
+# Webhook
+WEBHOOK_URL=https://[DOMAIN]/webhook/payment
+
+================================================================================
+14. TESTING CHECKLIST
+================================================================================
+
+[ ] Create order dengan invite link valid
+[ ] Generate QRIS payment
+[ ] Simulate webhook dari CiaaTopUp (manual POST)
+[ ] Bot auto join grup setelah payment
+[ ] Send konfirmasi ke user
+[ ] Check balance via API
+[ ] Trigger auto-withdraw (balance >= 20k)
+[ ] Verify withdraw status
+[ ] Test error scenarios:
+    [ ] Invalid invite link
+    [ ] Grup penuh
+    [ ] Grup butuh approval
+    [ ] Duplicate order
+    [ ] Invalid webhook signature
+    [ ] Expired payment
+
+================================================================================
+15. DEPLOYMENT NOTES
+================================================================================
+
+1. Set HTTPS untuk webhook (required by CiaaTopUp)
+2. Register webhook URL di dashboard CiaaTopUp
+3. Test dengan test credentials dulu
+4. Ganti secret key production setelah test OK
+5. Setup cron job untuk auto-withdraw scheduler
+6. Monitor logs untuk error tracking
+7. Setup alert untuk failed payment/withdraw
+8. Regular database backup
+
+================================================================================
+16. FUTURE IMPROVEMENTS
+================================================================================
+
+- Multiple payment methods (Shopee, GoPay, dll)
+- Discount coupon system
+- Referral program
+- Monthly statistics dashboard
+- Auto-retry failed bot join
+- Partial refund system
+- Multiple bot instances (load balancing)
+- Admin panel web UI
+
+================================================================================
+END OF SPECIFICATION
+================================================================================
